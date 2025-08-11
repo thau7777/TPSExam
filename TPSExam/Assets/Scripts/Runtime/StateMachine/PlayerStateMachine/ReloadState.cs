@@ -1,16 +1,52 @@
 using UnityEngine;
 
-public class ReloadState : MonoBehaviour
+public class ReloadState : PlayerState
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    public ReloadState(PlayerContext context, PlayerStateMachine.EPlayerState stateKey) : base(context, stateKey)
     {
-        
     }
 
-    // Update is called once per frame
-    void Update()
+    public override void EnterState()
     {
-        
+        throw new System.NotImplementedException();
+    }
+
+    public override void UpdateState()
+    {
+        throw new System.NotImplementedException();
+    }
+    public override void FixedUpdate()
+    {
+        throw new System.NotImplementedException();
+    }
+    public override void LateUpdate()
+    {
+        throw new System.NotImplementedException();
+    }
+    public override void ExitState()
+    {
+        throw new System.NotImplementedException();
+    }
+
+
+    public override PlayerStateMachine.EPlayerState GetNextState()
+    {
+        throw new System.NotImplementedException();
+    }
+
+
+    public override void OnTriggerEnter(Collider collision)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public override void OnTriggerExit(Collider collision)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public override void OnTriggerStay(Collider collision)
+    {
+        throw new System.NotImplementedException();
     }
 }
