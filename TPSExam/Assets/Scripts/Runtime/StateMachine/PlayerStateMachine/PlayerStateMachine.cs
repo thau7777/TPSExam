@@ -32,12 +32,10 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
     [SerializeField] private Transform _cameraTransform;
 
     [SerializeField]
-    private float _walkSpeed = 1.5f;
+    private float _strafeSpeed = 1.5f;
 
     [SerializeField]
     private float _runSpeed = 3f;
-
-
 
     CinemachineRotationComposer cameraRotationComposer;
     CinemachineOrbitalFollow cameraOrbitalFollow;
@@ -46,39 +44,6 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
     Vector2 ogScreenPosition;
     float ogCenterRadius;
     Vector3 ogTargetOffset;
-
-    bool returningToCenter = false;
-    [Header("Recoil Settings")]
-    [SerializeField] float recoilReturnSpeed = 5f; // how fast it returns
-
-    [MinMaxRangeSlider(-5f, 5f)]
-    [SerializeField]
-    private Vector2 AutoShotRecoilRangeX = new Vector2(-0.01f, 0.02f); // range of recoil offset
-
-    [SerializeField]
-    [Range(0f, 10f)]
-    private float AutoShotRecoilY = 5f; // fixed recoil offset in Y direction
-
-    [MinMaxRangeSlider(-0.1f, 0.1f)]
-    [SerializeField]
-    private Vector2 BurstShotRecoilRangeX = new Vector2(-0.01f, 0.02f); // range of recoil offset
-
-    [SerializeField]
-    [Range(0.01f, 0.05f)]
-    private float BurstShotRecoilY = 0.03f; // fixed recoil offset in Y direction
-
-    [MinMaxRangeSlider(-0.1f, 0.1f)]
-    [SerializeField]
-    private Vector2 SingleShotRecoilRangeX = new Vector2(-0.01f, 0.02f); // range of recoil offset
-
-    [SerializeField]
-    [Range(0.01f, 0.05f)]
-    private float SingleShotRecoilY = 0.03f; // fixed recoil offset in Y direction
-
-    // --- New: limits for the aimConstraint offset so recoil can't exceed boundaries ---
-    [Header("Aim Constraint Offset Limits")]
-    [SerializeField]
-    private Vector2 AimOffsetLimitX = new Vector2(-0.1f, 0.1f); // clamp X offset min/max
 
     // store original constraint offset so we can restore
     Vector3 ogAimConstraintOffset;
@@ -125,7 +90,6 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
         States.Add(EPlayerState.Run, new RunState(_context, EPlayerState.Run));
         States.Add(EPlayerState.Jump, new JumpState(_context, EPlayerState.Jump));
         States.Add(EPlayerState.Aim, new AimState(_context, EPlayerState.Aim));
-        States.Add(EPlayerState.Shoot, new ShootState(_context, EPlayerState.Shoot));
         States.Add(EPlayerState.Reload, new ReloadState(_context, EPlayerState.Reload));
         States.Add(EPlayerState.Dead, new DeadState(_context, EPlayerState.Dead));
 
@@ -212,7 +176,7 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
     private void OnAim(bool value)
     {
         _context.IsAiming = value;
-        _context.TargetSpeed = value ? _walkSpeed : _runSpeed;
+        _context.TargetSpeed = value ? _strafeSpeed : _runSpeed;
 
 
         if (value && _zoomCoroutine != null)
@@ -221,7 +185,6 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
         }
         if (!value)
         {
-            returningToCenter = false;
             _zoomCoroutine = StartCoroutine(ResetCameraSettings(0.5f));
         }
 
@@ -285,7 +248,7 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
         _context.MoveInput = vector;
         if (vector != Vector2.zero)
         {
-            _context.TargetSpeed = _context.IsAiming ? _walkSpeed : _runSpeed;
+            _context.TargetSpeed = _context.IsAiming ? _strafeSpeed : _runSpeed;
         }
         else
         {

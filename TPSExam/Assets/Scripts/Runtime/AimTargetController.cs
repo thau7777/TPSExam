@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 
 public class AimTargetController : MonoBehaviour
@@ -5,7 +6,9 @@ public class AimTargetController : MonoBehaviour
     public Camera mainCamera;
     public float maxDistance = 100f;
     public Color debugRayColor = Color.red;
-
+    Vector3 targetPosition;
+    public float smoothTime = 0.05f; // smaller = faster snap, larger = smoother
+    private Vector3 currentVelocity; // for SmoothDamp
     void LateUpdate()
     {
         if (mainCamera == null)
@@ -18,11 +21,19 @@ public class AimTargetController : MonoBehaviour
 
         if (Physics.Raycast(ray, out RaycastHit hit, maxDistance))
         {
-            transform.position = hit.point;
+            targetPosition = hit.point;
         }
         else
         {
-            transform.position = ray.origin + ray.direction * maxDistance;
+            targetPosition = ray.origin + ray.direction * maxDistance;
         }
+
+        // Smoothly move aimTarget to new position
+        transform.position = Vector3.SmoothDamp(
+            transform.position,
+            targetPosition,
+            ref currentVelocity,
+            smoothTime
+        );
     }
 }
