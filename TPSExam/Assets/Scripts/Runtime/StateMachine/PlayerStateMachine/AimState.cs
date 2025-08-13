@@ -24,6 +24,9 @@ public class AimState : PlayerState
     Vector2 _smoothedMoveInput;
     float _inputLerpSpeed = 10f; // higher = faster response
 
+    float aimConstraintTargetWeight = 1f; // desired target each frame
+    float aimConstraintCurrentWeight = 1f; // actual lerped weight
+    float aimConstraintBlendSpeed = 5f; // speed of blending
     public AimState(PlayerContext context, PlayerStateMachine.EPlayerState stateKey) : base(context, stateKey)
     {
     }
@@ -85,6 +88,7 @@ public class AimState : PlayerState
         Vector3 flatCamDir = GetFlatForward(Context.CameraTransform.forward);
         Vector3 flatRootForward = GetFlatForward(Context.RootTransform.forward);
         Context.LastMoveDirection = flatCamDir;
+
         float angleFromBaseline = Vector3.SignedAngle(currentFlatForward, flatCamDir, Vector3.up);
 
         // If outside limits, start turning
@@ -95,13 +99,16 @@ public class AimState : PlayerState
 
         if (isTurningRoot)
         {
+            // Rotate root
             Vector3 targetForward = Vector3.RotateTowards(flatRootForward, flatCamDir, Time.deltaTime * rotationSpeed, 0f);
             Context.RootTransform.forward = targetForward;
-            Context.AimConstraint.weight = 0.8f;
 
-            // Once the root is close enough to camera direction, stop turning & update baseline
+            // Keep upper body aiming (not snapping to root instantly)
+            aimConstraintTargetWeight = 1f; // keep aiming fully
+
+            // Once close enough to camera direction, stop turning
             float newAngle = Vector3.SignedAngle(flatRootForward, flatCamDir, Vector3.up);
-            if (Mathf.Abs(newAngle) < 0.5f) // tweak tolerance
+            if (Mathf.Abs(newAngle) < 0.5f)
             {
                 currentFlatForward = flatCamDir;
                 isTurningRoot = false;
@@ -109,11 +116,18 @@ public class AimState : PlayerState
         }
         else
         {
-            Context.AimConstraint.weight = 1f;
+            // Just follow camera normally
+            aimConstraintTargetWeight = 1f;
         }
+
+        // Smoothly update constraint weight
+        aimConstraintCurrentWeight = Mathf.MoveTowards(
+            aimConstraintCurrentWeight,
+            aimConstraintTargetWeight,
+            Time.deltaTime * aimConstraintBlendSpeed
+        );
+        Context.AimConstraint.weight = aimConstraintCurrentWeight;
     }
-
-
     void ShootHandler()
     {
         // Always update cooldown timer

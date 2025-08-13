@@ -74,4 +74,5 @@ public class InputReader : ScriptableObject, InputActions.IPlayerActions
         if (context.performed)
             onChangeShootingMethod?.Invoke();
     }
+
 }

@@ -3,6 +3,7 @@ using System.Collections;
 using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.Animations.Rigging;
+using UnityEngine.Events;
 
 public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
 {
@@ -11,8 +12,6 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
     [SerializeField] private Transform _leftHand;
     [SerializeField] private Transform _rightHand;
     [SerializeField] private MultiAimConstraint _aimConstraint;
-    [SerializeField] private Transform _aimTarget;
-    [SerializeField] private Transform _shootingPoint;
     public enum EPlayerState
     {
         Idle,
@@ -25,6 +24,7 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
     }
 
     private PlayerContext _context;
+    public UnityEvent<bool, float> EnableCameraShaking;
 
     [SerializeField] private InputReader _inputReader;
     [SerializeField] private CharacterController _characterController;
@@ -53,12 +53,15 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
     {
         base.OnEnable();
         ModifyInputActionsEvents(true);
+        OnStateChanged += OnStateChangedListener;
     }
+
 
     protected override void OnDisable()
     {
         base.OnDisable();
         ModifyInputActionsEvents(false);
+        OnStateChanged -= OnStateChangedListener;
     }
 
     private void Awake()
@@ -118,6 +121,8 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
             _inputReader.onChangeShootingMethod -= OnChangeShootingMethod;
         }
     }
+
+
     protected override void Update()
     {
         UpdateMovement();
@@ -163,6 +168,23 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
     //        }
     //    }
     //}
+    private void OnStateChangedListener(EPlayerState state)
+    {
+        switch (state)
+        {
+
+            case EPlayerState.Run:
+                EnableCameraShaking?.Invoke(true, _context.CurrentSpeed);
+                break;
+
+            default:
+                EnableCameraShaking?.Invoke(false, 0f);
+                
+                break;
+        }
+
+    }
+    
     private void OnJump()
     {
         throw new NotImplementedException();
@@ -267,11 +289,6 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
         _gun.SetParent(_rightHand);
     }
 
-    public void OnShootAnimation()
-    {
-        //RecoilSetter();
-        StartShoot();
-    }
 
     //void RecoilSetter()
     //{
@@ -308,7 +325,7 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
 
     //    // Clamp X and Y separately
     //    target.y = Mathf.Clamp(target.y, AimOffsetLimitX.x, AimOffsetLimitX.y);
-        
+
 
     //    d.offset = target;
     //    _aimConstraint.data = d;
@@ -317,19 +334,6 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
     //    returningToCenter = true;
     //}
 
-    void StartShoot()
-    {
-        var direction = _aimTarget.position - _shootingPoint.position;
-        Ray ray = new Ray(_shootingPoint.position, direction.normalized);
-        if (Physics.Raycast(ray, out RaycastHit hitInfo, Mathf.Infinity))
-        {
-            Debug.Log($"Hit: {hitInfo.collider.name}");
-            // Here you can add logic to handle the hit, like damaging an enemy
-        }
-        else
-        {
-            Debug.Log("Missed!");
-        }
-    }
+    
     #endregion
 }

@@ -1,4 +1,3 @@
-using TMPro;
 using UnityEngine;
 
 public class AimTargetController : MonoBehaviour
@@ -6,9 +5,14 @@ public class AimTargetController : MonoBehaviour
     public Camera mainCamera;
     public float maxDistance = 100f;
     public Color debugRayColor = Color.red;
-    Vector3 targetPosition;
-    public float smoothTime = 0.05f; // smaller = faster snap, larger = smoother
-    private Vector3 currentVelocity; // for SmoothDamp
+
+    [Tooltip("Select all layers to ignore in the Inspector")]
+    public LayerMask ignoreLayers;
+
+    private Vector3 targetPosition;
+    public float smoothTime = 0.05f;
+    private Vector3 currentVelocity;
+
     void LateUpdate()
     {
         if (mainCamera == null)
@@ -19,16 +23,24 @@ public class AimTargetController : MonoBehaviour
         // Visualize the ray in Scene view
         Debug.DrawRay(ray.origin, ray.direction * maxDistance, debugRayColor);
 
-        if (Physics.Raycast(ray, out RaycastHit hit, maxDistance))
+        // Perform RaycastAll with inverted mask to ignore layers
+        RaycastHit[] hits = Physics.RaycastAll(ray, maxDistance, ~ignoreLayers);
+
+        if (hits.Length > 0)
         {
-            targetPosition = hit.point;
+            // Sort hits by distance
+            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+
+            // Use the closest hit
+            targetPosition = hits[0].point;
         }
         else
         {
+            // No hit, aim at max range
             targetPosition = ray.origin + ray.direction * maxDistance;
         }
 
-        // Smoothly move aimTarget to new position
+        // Smoothly move aim target to new position
         transform.position = Vector3.SmoothDamp(
             transform.position,
             targetPosition,
