@@ -52,6 +52,10 @@ public class IdleState : PlayerState
         {
             return PlayerStateMachine.EPlayerState.Aim;
         }
+        if (Context.IsReloading)
+        {
+            return PlayerStateMachine.EPlayerState.Reload;
+        }
         return StateKey;
     }
 

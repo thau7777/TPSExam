@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 6396876560717000126}
   - component: {fileID: 7035973866480825260}
   - component: {fileID: 8791976545206489141}
-  - component: {fileID: 4980418231446469858}
   m_Layer: 0
   m_Name: BulletImpact_Dirt
   m_TagString: Untagged
@@ -4745,19 +4744,6 @@ ParticleSystemRenderer:
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
   m_MaskInteraction: 0
---- !u!114 &4980418231446469858
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 674733800580488079}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6fd2e8874f60266498a388d7229a1bac, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  OnlyDeactivate: 0
 --- !u!1 &1231688760268146007
 GameObject:
   m_ObjectHideFlags: 0

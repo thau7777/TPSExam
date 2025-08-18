@@ -3,18 +3,31 @@ using UnityEngine.UI;
 
 public class AimIconFollower : MonoBehaviour
 {
+    [SerializeField]
+    private InputReader _inputReader;    // Reference to the input reader for aiming state
+
     [Header("References")]
     public Transform aimTarget;         // World-space target to follow
     public Camera mainCamera;           // Main camera
     public RectTransform aimIconUI;     // The UI Image's RectTransform
 
     [Header("Settings")]
-    public bool isAiming;               // Controlled from your aim logic
+    [SerializeField]
+    private bool isAiming = false;               // Controlled from your aim logic
+
+    private void OnEnable()
+    {
+        _inputReader.onAim += SetIsAiming;
+    }
+
+    private void OnDisable()
+    {
+        _inputReader.onAim -= SetIsAiming;
+    }
 
     void Update()
     {
         // Show/hide the icon based on aiming state
-        aimIconUI.gameObject.SetActive(isAiming);
 
         if (!isAiming || aimTarget == null || mainCamera == null)
             return;
@@ -24,5 +37,12 @@ public class AimIconFollower : MonoBehaviour
 
         // Update UI icon position (Canvas must be Screen Space - Overlay or Screen Space - Camera)
         aimIconUI.position = screenPos;
+    }
+
+    private void SetIsAiming(bool value)
+    {
+        isAiming = value;
+
+        aimIconUI.gameObject.SetActive(isAiming);
     }
 }

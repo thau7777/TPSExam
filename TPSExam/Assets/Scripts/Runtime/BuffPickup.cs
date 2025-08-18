@@ -19,7 +19,7 @@ public class BuffPickup : MonoBehaviour
             //    playerBuffs.ApplyBuff(buffData);
             //}
 
-            BuffPool.Instance.Despawn(this);
+            BuffManager.Instance.Despawn(this);
         }
     }
 }

@@ -3,11 +3,6 @@ using UnityEngine.Events;
 
 public class Damageable : MonoBehaviour
 {
-    public enum DamageType
-    {
-        Normal,
-        Explosive,
-    }
 
     [SerializeField]
     private float _currentHealth;
@@ -32,16 +27,26 @@ public class Damageable : MonoBehaviour
     }
 
 
-    public UnityEvent<DamageType,float> OnDamaged;
+    public UnityEvent<float> OnDamaged;
 
     private void Awake()
     {
         CurrentHealth = MaxHealth;
     }
-    public void TakeDamage(DamageType damageType,float damage)
+    public void TakeDamage(float damage)
     {
         if (damage <= 0) return;
         CurrentHealth -= damage;
-        OnDamaged?.Invoke(damageType, CurrentHealth);
+        OnDamaged?.Invoke(CurrentHealth);
+    }
+
+    public void ResetHealth()
+    {
+        CurrentHealth = MaxHealth;
+    }
+
+    public void IncreaseMaxHealth(float value)
+    {
+
     }
 }

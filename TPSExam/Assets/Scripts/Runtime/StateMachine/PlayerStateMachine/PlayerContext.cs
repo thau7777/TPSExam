@@ -4,14 +4,7 @@ using UnityEngine.Animations.Rigging;
 
 public class PlayerContext
 {
-    public enum EShootingMethod
-    {
-        Auto,
-        Burst,
-        Single
-    }
-
-    public EShootingMethod CurrentShootingMethod;
+    
 
     public Transform RootTransform;
     public CharacterController CharacterController;
@@ -26,7 +19,16 @@ public class PlayerContext
     public bool IsShooting;
 
     public float CurrentSpeed;
-    public float TargetSpeed;
+    
+    private float _targetSpeed;
+    public float TargetSpeed
+    {
+        get => _targetSpeed;
+        set
+        {
+            _targetSpeed = value;
+        }
+    }
 
     public Vector3 LastMoveDirection;
     public Vector3 HorizontalVelocity;
@@ -35,13 +37,16 @@ public class PlayerContext
     public CinemachineRotationComposer CinemachineRotationComposer;
     public CinemachineOrbitalFollow CinemachineOrbitalFollow;
 
+    public bool IsReloading;
+    public float ReloadTime;
     public PlayerContext(Transform rootTransform, 
         CharacterController characterController, 
         Animator animator, 
         Transform cameraTransform, 
         MultiAimConstraint aimConstraint,
         CinemachineRotationComposer cinemachineRotationComposer,
-        CinemachineOrbitalFollow cinemachineOrbitalFollow)
+        CinemachineOrbitalFollow cinemachineOrbitalFollow
+        )
     {
         RootTransform = rootTransform;
         CharacterController = characterController;
@@ -50,7 +55,6 @@ public class PlayerContext
         AimConstraint = aimConstraint;
         CinemachineRotationComposer = cinemachineRotationComposer;
         CinemachineOrbitalFollow = cinemachineOrbitalFollow;
-
-        CurrentShootingMethod = EShootingMethod.Auto; // Default shooting method
+        IsReloading = false;
     }
 }

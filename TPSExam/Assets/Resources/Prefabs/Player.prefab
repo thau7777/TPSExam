@@ -993,10 +993,11 @@ Transform:
   m_GameObject: {fileID: 4023213686477715646}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0, y: 127.1, z: -3.6}
+  m_LocalPosition: {x: 0.8, y: 127.1, z: -3.6}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 9124040180603928479}
   m_Father: {fileID: 6284461196621757403}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &4326192968592650716
@@ -2847,6 +2848,7 @@ GameObject:
   - component: {fileID: 1833474085018080964}
   - component: {fileID: 5419008786195696371}
   - component: {fileID: 3276773575245578638}
+  - component: {fileID: 7455678386913836182}
   m_Layer: 9
   m_Name: Player
   m_TagString: Player
@@ -2956,8 +2958,6 @@ MonoBehaviour:
   _leftHand: {fileID: 7434445704159625781}
   _rightHand: {fileID: 446854341376501873}
   _aimConstraint: {fileID: 7434969986977738327}
-  _aimTarget: {fileID: 0}
-  _shootingPoint: {fileID: 8321534692483259802}
   EnableCameraShaking:
     m_PersistentCalls:
       m_Calls:
@@ -2977,6 +2977,7 @@ MonoBehaviour:
   _characterController: {fileID: 1165097130453575170}
   _animator: {fileID: 1726362695960034681}
   _cameraTransform: {fileID: 0}
+  _shooter: {fileID: 0}
   _strafeSpeed: 1.5
   _runSpeed: 7
 --- !u!114 &5419008786195696371
@@ -3008,6 +3009,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fca5b1332e29d5d41812b304cbc74957, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _inputReader: {fileID: 11400000, guid: 109e62b68bdaebb4db7eff5d0a8b20f2, type: 2}
+  CurrentShootingMethod: 0
   aimTarget: {fileID: 6345660998949110195}
   debugRayColor: {r: 0, g: 1, b: 0, a: 1}
   maxDistance: 100
@@ -3015,6 +3018,35 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 256
   smoothTime: 0.1
+  _shootingPoint: {fileID: 8321534692483259802}
+  _singleShotCooldown: 0.5
+  _burstShotCooldown: 0.25
+  _muzzleFlash: {fileID: 8780173339458393976}
+  _muzzleLight: {fileID: 5139791902796599275}
+  _grenadeLaunchForce: 20
+  _grenadePrefab: {fileID: 8246401343356677926, guid: bd9198f9be23cac42852263c06acdf10, type: 3}
+  _grenadeDamage: 50
+  _grenadeKnockbackForce: 5
+  _currentAmmo: 50
+  _ammoPerCapacity: 50
+  _totalAmmoRemaining: 150
+--- !u!114 &7455678386913836182
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8991870324096235638}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7520d4f93c2c72e47a4177b7509d2b10, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _currentHealth: 0
+  _maxHealth: 100
+  OnDamaged:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &9067867450780440439
 GameObject:
   m_ObjectHideFlags: 0
@@ -3160,3 +3192,92 @@ SkinnedMeshRenderer:
     m_Center: {x: -58.594677, y: 13.632675, z: 0.00010681152}
     m_Extent: {x: 29.436275, y: 28.906914, z: 140.37485}
   m_DirtyAABB: 0
+--- !u!1001 &9014927438484794004
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 8321534692483259802}
+    m_Modifications:
+    - target: {fileID: 253449035330311435, guid: a0758a477f9b3dd4383c792c0445113f, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 253449035330311435, guid: a0758a477f9b3dd4383c792c0445113f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 28.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 253449035330311435, guid: a0758a477f9b3dd4383c792c0445113f, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 253449035330311435, guid: a0758a477f9b3dd4383c792c0445113f, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.70710677
+      objectReference: {fileID: 0}
+    - target: {fileID: 253449035330311435, guid: a0758a477f9b3dd4383c792c0445113f, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0.0000000023283044
+      objectReference: {fileID: 0}
+    - target: {fileID: 253449035330311435, guid: a0758a477f9b3dd4383c792c0445113f, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0.00000009610077
+      objectReference: {fileID: 0}
+    - target: {fileID: 253449035330311435, guid: a0758a477f9b3dd4383c792c0445113f, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 253449035330311435, guid: a0758a477f9b3dd4383c792c0445113f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 253449035330311435, guid: a0758a477f9b3dd4383c792c0445113f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 253449035330311435, guid: a0758a477f9b3dd4383c792c0445113f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3419787319451332580, guid: a0758a477f9b3dd4383c792c0445113f, type: 3}
+      propertyPath: m_Name
+      value: MuzzleFlash
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 5336463858746374139, guid: a0758a477f9b3dd4383c792c0445113f, type: 3}
+      insertIndex: 2
+      addedObject: {fileID: 5139791902796599275}
+  m_SourcePrefab: {fileID: 100100000, guid: a0758a477f9b3dd4383c792c0445113f, type: 3}
+--- !u!1 &3969247039103393135 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5336463858746374139, guid: a0758a477f9b3dd4383c792c0445113f, type: 3}
+  m_PrefabInstance: {fileID: 9014927438484794004}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &5139791902796599275
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3969247039103393135}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 42dd2a9adefa76d48b816ac0d180cbaf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  flickerInterval: 0.05
+  onceDuration: 0.1
+--- !u!198 &8780173339458393976 stripped
+ParticleSystem:
+  m_CorrespondingSourceObject: {fileID: 342842706286558700, guid: a0758a477f9b3dd4383c792c0445113f, type: 3}
+  m_PrefabInstance: {fileID: 9014927438484794004}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &9124040180603928479 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 253449035330311435, guid: a0758a477f9b3dd4383c792c0445113f, type: 3}
+  m_PrefabInstance: {fileID: 9014927438484794004}
+  m_PrefabAsset: {fileID: 0}

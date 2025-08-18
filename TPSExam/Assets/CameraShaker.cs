@@ -14,6 +14,11 @@ public class CameraShaker : MonoBehaviour
     private float _currentSpeed;
     private float _targetSpeed;
 
+    private void Awake()
+    {
+        _shaker = GameObject.FindWithTag("CinemachineCamera")?
+            .GetComponent<CinemachineBasicMultiChannelPerlin>();
+    }
     private void Update()
     {
         if (_shaker == null) return;

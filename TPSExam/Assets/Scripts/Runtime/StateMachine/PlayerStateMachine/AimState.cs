@@ -13,9 +13,6 @@ public class AimState : PlayerState
     float leftLimit = -50f;   // customize
     float rightLimit = 75f;   // customize
 
-    float _shootCooldown = 1f; 
-    float _lastShootTime = 0f;
-    float timeSinceLastShot;
     Vector3 currentFlatForward; 
     bool isTurningRoot = false;
 
@@ -33,8 +30,6 @@ public class AimState : PlayerState
 
     public override void EnterState()
     {
-        
-        _lastShootTime = _shootCooldown;
 
         _elapsedTime = 0f;
         Context.Animator.CrossFade("Strafe", Context.NextAnimCrossFadeTime);
@@ -77,7 +72,6 @@ public class AimState : PlayerState
         Context.Animator.SetFloat("InputY", _smoothedMoveInput.y);
 
         UpdateHorizontalVelocity(Context.CurrentSpeed);
-        ShootHandler();
         HandleHorizontalRotation();
     }
 
@@ -128,39 +122,7 @@ public class AimState : PlayerState
         );
         Context.AimConstraint.weight = aimConstraintCurrentWeight;
     }
-    void ShootHandler()
-    {
-        // Always update cooldown timer
-        timeSinceLastShot = Time.time - _lastShootTime;
-
-        switch (Context.CurrentShootingMethod)
-        {
-            case PlayerContext.EShootingMethod.Single:
-                ApplyShootMethodAnim("SingleShot");
-                break;
-
-            case PlayerContext.EShootingMethod.Burst:
-                ApplyShootMethodAnim("BurstShot");
-                break;
-
-            case PlayerContext.EShootingMethod.Auto:
-                Context.Animator.SetBool("IsAutoShot", Context.IsShooting);
-                break;
-        }
-    }
-
-    private void ApplyShootMethodAnim(string animName)
-    {
-        if (Context.IsShooting)
-        {
-            Context.IsShooting = false;
-            if (timeSinceLastShot >= _shootCooldown)
-            {
-                Context.Animator.Play(animName,1);
-                _lastShootTime = Time.time;
-            }
-        }
-    }
+    
 
     public override void FixedUpdate()
     {
@@ -184,7 +146,6 @@ public class AimState : PlayerState
         Context.NextAnimCrossFadeTime = 0.1f;
         if (!Context.IsAiming)
         {
-            
             if (Context.MoveInput == Vector2.zero)
             {
                 return PlayerStateMachine.EPlayerState.Idle;
@@ -193,6 +154,11 @@ public class AimState : PlayerState
             {
                 return PlayerStateMachine.EPlayerState.Run;
             }
+        }
+        if (Context.IsReloading)
+        {
+            Context.IsAiming = false;
+            return PlayerStateMachine.EPlayerState.Reload;
         }
         return StateKey;
     }

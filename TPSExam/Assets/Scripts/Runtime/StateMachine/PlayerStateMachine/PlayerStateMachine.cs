@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using Unity.Cinemachine;
 using UnityEngine;
+using UnityEngine.Animations;
 using UnityEngine.Animations.Rigging;
 using UnityEngine.Events;
 
@@ -30,6 +31,7 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
     [SerializeField] private CharacterController _characterController;
     [SerializeField] private Animator _animator;
     [SerializeField] private Transform _cameraTransform;
+    [SerializeField] private Shooter _shooter;
 
     [SerializeField]
     private float _strafeSpeed = 1.5f;
@@ -66,6 +68,8 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
 
     private void Awake()
     {
+        _shooter = GetComponent<Shooter>();
+        _cameraTransform = GameObject.FindWithTag("CinemachineCamera").transform;
         cameraRotationComposer = _cameraTransform.GetComponent<CinemachineRotationComposer>();
         cameraOrbitalFollow = _cameraTransform.GetComponent<CinemachineOrbitalFollow>();
         ogScreenPosition = cameraRotationComposer.Composition.ScreenPosition;
@@ -107,18 +111,16 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
         if (enable)
         {
             _inputReader.onMove += OnMove;
+            _inputReader.onReload += OnReload;
             _inputReader.onAim += OnAim;
-            _inputReader.onShoot += OnShoot;
             _inputReader.onJump += OnJump;
-            _inputReader.onChangeShootingMethod += OnChangeShootingMethod;
         }
         else
         {
             _inputReader.onMove -= OnMove;
+            _inputReader.onReload -= OnReload;
             _inputReader.onAim -= OnAim;
-            _inputReader.onShoot -= OnShoot;
             _inputReader.onJump -= OnJump;
-            _inputReader.onChangeShootingMethod -= OnChangeShootingMethod;
         }
     }
 
@@ -190,20 +192,36 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
         throw new NotImplementedException();
     }
 
-    private void OnShoot(bool value)
+    private void OnReload()
     {
-        _context.IsShooting = value;
+        if (_shooter.CurrentAmmo == _shooter.AmmoPerCapacity || _shooter.TotalAmmoRemaining == 0)
+            return;
+        _context.IsReloading = true;
+        if (_context.MoveInput != Vector2.zero)
+        {
+            _context.TargetSpeed = _strafeSpeed;
+        }
+        else
+        {
+            _context.TargetSpeed = 0f;
+        }
+        if(_zoomCoroutine == null) _zoomCoroutine = StartCoroutine(ResetCameraSettings(0.5f));
     }
 
     private void OnAim(bool value)
     {
         _context.IsAiming = value;
+
+        if (_context.IsReloading)
+            return; // Don't allow aiming while reloading
+
         _context.TargetSpeed = value ? _strafeSpeed : _runSpeed;
 
 
         if (value && _zoomCoroutine != null)
         {
             StopCoroutine(_zoomCoroutine);
+            _zoomCoroutine = null;
         }
         if (!value)
         {
@@ -258,24 +276,24 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
         //_context.CinemachineOrbitalFollow.HorizontalAxis.Value = AimHorizontalAfter;
     }
 
-    private void OnChangeShootingMethod()
-    {
-        _context.CurrentShootingMethod =
-        (PlayerContext.EShootingMethod)(((int)_context.CurrentShootingMethod + 1) %
-        System.Enum.GetValues(typeof(PlayerContext.EShootingMethod)).Length);
-    }
 
     private void OnMove(Vector2 vector)
     {
         _context.MoveInput = vector;
         if (vector != Vector2.zero)
         {
-            _context.TargetSpeed = _context.IsAiming ? _strafeSpeed : _runSpeed;
+            _context.TargetSpeed = _context.IsAiming || _context.IsReloading ? _strafeSpeed : _runSpeed;
         }
         else
         {
             _context.TargetSpeed = 0f;
         }
+    }
+
+    public void OnReloadBuffPickup(float percent)
+    {
+        float currentReloadSpeed = _animator.GetFloat("ReloadSpeed");
+        _animator.SetFloat("ReloadSpeed", currentReloadSpeed + percent);
     }
 
     #region  Animation Events
@@ -286,7 +304,18 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
 
     public void OnReloadAnimationEnd()
     {
+        _context.IsReloading = false;
         _gun.SetParent(_rightHand);
+
+        if (_context.MoveInput != Vector2.zero)
+        {
+            _context.TargetSpeed = _context.IsAiming ? _strafeSpeed : _runSpeed;
+        }
+        else
+        {
+            _context.TargetSpeed = 0f;
+        }
+
     }
 
 
@@ -334,6 +363,7 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
     //    returningToCenter = true;
     //}
 
-    
+
     #endregion
+
 }

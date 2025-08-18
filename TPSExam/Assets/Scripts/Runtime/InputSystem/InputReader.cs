@@ -13,6 +13,7 @@ public class InputReader : ScriptableObject, InputActions.IPlayerActions
     public Action<bool> onShoot;
     public Action onChangeShootingMethod;
     public Action onJump;
+    public Action onReload;
     private void OnEnable()
     {
         if (input == null)
@@ -75,4 +76,11 @@ public class InputReader : ScriptableObject, InputActions.IPlayerActions
             onChangeShootingMethod?.Invoke();
     }
 
+    public void OnReload(InputAction.CallbackContext context)
+    {
+        if(context.performed)
+        {
+            onReload?.Invoke();
+        }
+    }
 }
