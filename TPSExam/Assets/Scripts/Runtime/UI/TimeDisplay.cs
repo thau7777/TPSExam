@@ -13,12 +13,12 @@ public class TimeDisplay : MonoBehaviour
 
     private void OnEnable()
     {
-        GameManager.Instance.onMinuteIncrease += UpdateTimeDisplay;
+        GameManager.Instance.onSecondIncrease += UpdateTimeDisplay;
     }
 
     private void OnDisable()
     {
-        GameManager.Instance.onMinuteIncrease -= UpdateTimeDisplay;
+        GameManager.Instance.onSecondIncrease -= UpdateTimeDisplay;
     }
 
     private void UpdateTimeDisplay(int minute , int second)

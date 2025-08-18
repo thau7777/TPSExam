@@ -4,14 +4,14 @@ using System.Collections.Generic;
 
 /// <summary>
 /// Persistent singleton that manages multiple particle effect pools.
-/// You can register particle prefabs in the inspector and spawn them by ID or enum.
+/// Register particle prefabs in the inspector and spawn them by ID.
 /// </summary>
-public class BulletImpactManager : PersistentSingleton<BulletImpactManager>
+public class ParticleManager : PersistentSingleton<ParticleManager>
 {
     [System.Serializable]
     public class ParticlePrefabEntry
     {
-        public string id; // Identifier (e.g. "Explosion", "MuzzleFlash")
+        public string id; // Identifier (e.g. "Explosion", "MuzzleFlash", "Smoke")
         public ParticleSystem prefab;
         public int defaultCapacity = 5;
         public int maxCapacity = 20;
@@ -21,6 +21,7 @@ public class BulletImpactManager : PersistentSingleton<BulletImpactManager>
 
     private Dictionary<string, ObjectPool<ParticleSystem>> _pools = new Dictionary<string, ObjectPool<ParticleSystem>>();
     [SerializeField] private Transform _particleParent;
+
     protected override void Awake()
     {
         base.Awake();

@@ -44,7 +44,7 @@ public class GrenadeProjectile : MonoBehaviour
     private void Explode()
     {
         // Spawn explosion effect
-        BulletImpactManager.Instance.Spawn("SmallExplosion", transform.position, Quaternion.identity);
+        ParticleManager .Instance.Spawn("SmallExplosion", transform.position, Quaternion.identity);
 
         // Damage & knockback
         Collider[] hits = Physics.OverlapSphere(transform.position, explosionRadius, enemyLayer);

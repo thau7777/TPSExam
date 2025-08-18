@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.Pool;
 using System.Collections.Generic;
 
@@ -13,17 +13,27 @@ public class EnemyManager : Singleton<EnemyManager>
         public int maxCapacity = 20;
     }
 
-
     [SerializeField] private List<EnemyPrefabEntry> enemyPrefabs = new List<EnemyPrefabEntry>();
-
     private Dictionary<string, ObjectPool<GameObject>> _pools = new Dictionary<string, ObjectPool<GameObject>>();
     [SerializeField] private Transform _enemyParent;
-
     [SerializeField] private float _enemyDamage = 10f;
-    protected override void Awake()
+
+    // 🔑 Track active enemies
+    private HashSet<GameObject> _activeEnemies = new HashSet<GameObject>();
+
+    private void OnEnable()
     {
-        base.Awake();
-       
+        GameManager.Instance.onPickupKillAllEnemiesBuff += KillAllEnemies;
+        GameManager.Instance.onMinuteIncrease += IncreaseEnemyDamage; // Example usage, adjust as needed
+    }
+    private void OnDisable()
+    {
+        GameManager.Instance.onPickupKillAllEnemiesBuff -= KillAllEnemies;
+        GameManager.Instance.onMinuteIncrease -= IncreaseEnemyDamage; // Example usage, adjust as needed
+    }
+
+    private void Awake()
+    {
 
         foreach (var entry in enemyPrefabs)
         {
@@ -58,6 +68,8 @@ public class EnemyManager : Singleton<EnemyManager>
     private void OnGetFromPool(GameObject obj)
     {
         obj.SetActive(true);
+        _activeEnemies.Add(obj); // ✅ track spawned enemy
+
         var ai = obj.GetComponent<SwarmAI>();
         if (ai != null)
         {
@@ -65,21 +77,22 @@ public class EnemyManager : Singleton<EnemyManager>
             ai.ResetBaseOffset();
             ai.GetComponentInChildren<EnemyAttack>().attackDamage = _enemyDamage;
             ai.GetComponent<Damageable>().ResetHealth();
+
             var col = ai.GetComponent<Collider>();
             if (col != null)
                 col.enabled = true; // Re-enable collider on spawn
         }
     }
 
-
-
     private void OnReleaseToPool(GameObject obj)
     {
         obj.SetActive(false);
+        _activeEnemies.Remove(obj); // ✅ remove from active set
     }
 
     private void OnDestroyPoolObject(GameObject obj)
     {
+        _activeEnemies.Remove(obj); // ✅ cleanup
         Destroy(obj);
     }
 
@@ -92,12 +105,6 @@ public class EnemyManager : Singleton<EnemyManager>
         }
 
         var enemy = pool.Get();
-       
-        //if(id == "Bee")
-        //{
-        //    var newPosition = new Vector3(position.x,position.y + 1.3f, position.z);
-        //    position = newPosition;
-        //}
         enemy.transform.SetPositionAndRotation(position, rotation);
         return enemy;
     }
@@ -130,5 +137,28 @@ public class EnemyManager : Singleton<EnemyManager>
     public void IncreaseEnemyDamage(float percent)
     {
         _enemyDamage += _enemyDamage * (percent / 100f);
+    }
+
+    // 🔥 Kill all active enemies
+    public void KillAllEnemies()
+    {
+        // Copy to array first to avoid modifying collection during iteration
+        var enemies = new List<GameObject>(_activeEnemies);
+
+        foreach (var enemy in enemies)
+        {
+            var ai = enemy.GetComponent<SwarmAI>();
+            if (ai != null && !string.IsNullOrEmpty(ai.poolID))
+            {
+                Release(ai.poolID, enemy);
+            }
+            else
+            {
+                enemy.SetActive(false);
+                _activeEnemies.Remove(enemy);
+            }
+        }
+
+        Debug.Log("All enemies killed!");
     }
 }

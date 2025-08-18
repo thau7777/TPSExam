@@ -40,6 +40,8 @@ public class Shooter : MonoBehaviour
     private bool _isAiming;
 
     [SerializeField]
+    private float _bulletDamage = 10f; // Damage dealt by bullets
+    [SerializeField]
     private ParticleSystem _muzzleFlash;
     [SerializeField]
     private MuzzleLightController _muzzleLight;
@@ -91,11 +93,26 @@ public class Shooter : MonoBehaviour
         }
     }
 
+
+    // Fields for buff tracking
+    private Coroutine _infinityBulletCoroutine;
+    private Coroutine _infinityGrenadeCoroutine;
+    private bool _hasInfinityBullet;
+    private bool _hasInfinityGrenade;
+
     private void OnEnable()
     {
         _inputReader.onAim += SetIsAiming;
         _inputReader.onShoot += OnShoot;
         _inputReader.onChangeShootingMethod += OnChangeShootingMethod;
+
+
+        GameManager.Instance.onPickupAmmo += OnPickupAmmo;
+        GameManager.Instance.onPickupReloadSpeedBuff += OnPickupReloadSpeedBuff;
+        GameManager.Instance.onPickupBulletDamageBuff += OnPickupBulletDamageBuff;
+        GameManager.Instance.onPickupGrenadeDamageBuff += OnPickupGrenadeDamageBuff;
+        GameManager.Instance.onPickupInfinityBulletBuff += OnPickupInfinityBulletBuff;
+        GameManager.Instance.onPickupInfinityGrenadeBuff += OnPickupInfinityGrenadeBuff;
     }
 
 
@@ -104,7 +121,16 @@ public class Shooter : MonoBehaviour
         _inputReader.onAim -= SetIsAiming;
         _inputReader.onShoot -= OnShoot;
         _inputReader.onChangeShootingMethod -= OnChangeShootingMethod;
+
+        GameManager.Instance.onPickupAmmo -= OnPickupAmmo;
+        GameManager.Instance.onPickupReloadSpeedBuff -= OnPickupReloadSpeedBuff;
+        GameManager.Instance.onPickupBulletDamageBuff -= OnPickupBulletDamageBuff;
+        GameManager.Instance.onPickupGrenadeDamageBuff -= OnPickupGrenadeDamageBuff;
+        GameManager.Instance.onPickupInfinityBulletBuff -= OnPickupInfinityBulletBuff;
+        GameManager.Instance.onPickupInfinityGrenadeBuff -= OnPickupInfinityGrenadeBuff;
     }
+
+    
 
     private void Awake()
     {
@@ -261,11 +287,11 @@ public class Shooter : MonoBehaviour
         {
             string ParticleEffectId = hitInfo.collider.gameObject.layer == LayerMask.NameToLayer("Enemy") ? "BloodImpact" : "BulletImpact";
 
-            BulletImpactManager.Instance.Spawn(ParticleEffectId, hitInfo.point, Quaternion.LookRotation(hitInfo.normal));
+            ParticleManager .Instance.Spawn(ParticleEffectId, hitInfo.point, Quaternion.LookRotation(hitInfo.normal));
 
             if (hitInfo.collider.TryGetComponent<Damageable>(out Damageable damageable))
             {
-                damageable.TakeDamage(10f); // Example damage value
+                damageable.TakeDamage(_bulletDamage); // Example damage value
             }
         }
     }
@@ -300,5 +326,65 @@ public class Shooter : MonoBehaviour
         _totalAmmoRemaining -= ammoToReload;
         GameManager.Instance.UpdateAmmo(CurrentAmmo, TotalAmmoRemaining);
 
+    }
+
+    private void OnPickupInfinityBulletBuff(float duration)
+    {
+        if (_infinityBulletCoroutine != null)
+        {
+            StopCoroutine(_infinityBulletCoroutine);
+        }
+        _infinityBulletCoroutine = StartCoroutine(InfinityBulletRoutine(duration));
+    }
+
+    private void OnPickupInfinityGrenadeBuff(float duration)
+    {
+        if (_infinityGrenadeCoroutine != null)
+        {
+            StopCoroutine(_infinityGrenadeCoroutine);
+        }
+        _infinityGrenadeCoroutine = StartCoroutine(InfinityGrenadeRoutine(duration));
+    }
+
+    private IEnumerator InfinityBulletRoutine(float duration)
+    {
+        _hasInfinityBullet = true;
+        Debug.Log($"Infinity Bullet buff active for {duration} seconds!");
+        yield return new WaitForSeconds(duration);
+        _hasInfinityBullet = false;
+        Debug.Log("Infinity Bullet buff expired.");
+        _infinityBulletCoroutine = null;
+    }
+
+    private IEnumerator InfinityGrenadeRoutine(float duration)
+    {
+        _hasInfinityGrenade = true;
+        Debug.Log($"Infinity Grenade buff active for {duration} seconds!");
+        yield return new WaitForSeconds(duration);
+        _hasInfinityGrenade = false;
+        Debug.Log("Infinity Grenade buff expired.");
+        _infinityGrenadeCoroutine = null;
+    }
+
+    private void OnPickupGrenadeDamageBuff(float amount)
+    {
+        _grenadeDamage += _grenadeDamage * amount; // add percentage increase
+    }
+
+    private void OnPickupBulletDamageBuff(float amount)
+    {
+        _bulletDamage += _bulletDamage * amount;// add percentage increase
+    }
+
+    private void OnPickupReloadSpeedBuff(float amount)
+    {
+        float reloadSpeed = _animator.GetFloat("ReloadSpeed");
+        reloadSpeed = Mathf.Clamp(reloadSpeed + amount, 1, 2f); // Ensure reload speed is within a reasonable range
+        _animator.SetFloat("ReloadSpeed", reloadSpeed);
+    }
+
+    private void OnPickupAmmo(int amount)
+    {
+        TotalAmmoRemaining += amount;
     }
 }

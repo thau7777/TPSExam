@@ -32,6 +32,7 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
     [SerializeField] private Animator _animator;
     [SerializeField] private Transform _cameraTransform;
     [SerializeField] private Shooter _shooter;
+    private Damageable _damageable;
 
     [SerializeField]
     private float _strafeSpeed = 1.5f;
@@ -50,12 +51,19 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
     // store original constraint offset so we can restore
     Vector3 ogAimConstraintOffset;
 
+    [Header("Buffs Value")]
+    [SerializeField] private float _healthRegenPercent = 1f; // percent per second
 
     protected override void OnEnable()
     {
         base.OnEnable();
         ModifyInputActionsEvents(true);
         OnStateChanged += OnStateChangedListener;
+
+        GameManager.Instance.onPickupSpeedBuff += OnPickupSpeedBuff;
+        GameManager.Instance.onPickupMaxHealthBuff += OnPickupMaxHealthBuff;
+        GameManager.Instance.onPickupHealthRegenBuff += OnPickupHealthRegenBuff;
+        GameManager.Instance.onPickupInstantHealBuff += OnPickupInstantHealBuff;
     }
 
 
@@ -64,11 +72,57 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
         base.OnDisable();
         ModifyInputActionsEvents(false);
         OnStateChanged -= OnStateChangedListener;
+
+        GameManager.Instance.onPickupSpeedBuff -= OnPickupSpeedBuff;
+        GameManager.Instance.onPickupMaxHealthBuff -= OnPickupMaxHealthBuff;
+        GameManager.Instance.onPickupHealthRegenBuff -= OnPickupHealthRegenBuff;
+        GameManager.Instance.onPickupInstantHealBuff -= OnPickupInstantHealBuff;
     }
+
+
+    private void OnPickupInstantHealBuff(float obj)
+    {
+        _damageable.CurrentHealth += obj;
+        if(_damageable.CurrentHealth > _damageable.MaxHealth)
+        {
+            _damageable.CurrentHealth = _damageable.MaxHealth;
+        }
+    }
+
+    private void OnPickupHealthRegenBuff(float obj)
+    {
+        _healthRegenPercent += obj;
+    }
+    private IEnumerator HealthRegenHandler()
+    {
+        while (true)
+        {
+            yield return new WaitForSeconds(1f);
+
+            if (_damageable.CurrentHealth < _damageable.MaxHealth)
+            {
+                float regenAmount = _damageable.MaxHealth * (_healthRegenPercent / 100f);
+                _damageable.CurrentHealth = Mathf.Min(_damageable.CurrentHealth + regenAmount, _damageable.MaxHealth);
+
+            }
+        }
+    }
+    private void OnPickupMaxHealthBuff(float obj)
+    {
+        _damageable.MaxHealth += _damageable.MaxHealth * obj;
+    }
+
+    private void OnPickupSpeedBuff(float percent)
+    {
+        _runSpeed += _runSpeed * (percent / 100f);
+        _runSpeed = Mathf.Clamp(_runSpeed, 1f, 10f);
+    }
+
 
     private void Awake()
     {
         _shooter = GetComponent<Shooter>();
+        _damageable = GetComponent<Damageable>();
         _cameraTransform = GameObject.FindWithTag("CinemachineCamera").transform;
         cameraRotationComposer = _cameraTransform.GetComponent<CinemachineRotationComposer>();
         cameraOrbitalFollow = _cameraTransform.GetComponent<CinemachineOrbitalFollow>();
@@ -105,7 +159,10 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
 
     }
 
-
+    private void Start()
+    {
+        StartCoroutine(HealthRegenHandler());
+    }
     private void ModifyInputActionsEvents(bool enable)
     {
         if (enable)
@@ -318,50 +375,10 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
 
     }
 
+    public void OnTakeDamage()
+    {
 
-    //void RecoilSetter()
-    //{
-    //    if (_aimConstraint == null)
-    //        return;
-
-    //    // Save original offset if we are not currently returning
-    //      //  aimConstraintBeforeShoot = _aimConstraint.data.offset;
-
-    //    // Calculate recoil offset in local offset-space (X,Y)
-    //    float xOffset = 0f;
-    //    float yOffset = 0f;
-
-    //    switch (_context.CurrentShootingMethod)
-    //    {
-    //        case PlayerContext.EShootingMethod.Auto:
-    //            xOffset = UnityEngine.Random.Range(AutoShotRecoilRangeX.x, AutoShotRecoilRangeX.y);
-    //            yOffset = AutoShotRecoilY;
-    //            break;
-    //        case PlayerContext.EShootingMethod.Burst:
-    //            xOffset = UnityEngine.Random.Range(BurstShotRecoilRangeX.x, BurstShotRecoilRangeX.y);
-    //            yOffset = BurstShotRecoilY;
-    //            break;
-    //        case PlayerContext.EShootingMethod.Single:
-    //            xOffset = UnityEngine.Random.Range(SingleShotRecoilRangeX.x, SingleShotRecoilRangeX.y);
-    //            yOffset = SingleShotRecoilY;
-    //            break;
-    //    }
-
-    //    // Apply recoil by modifying the MultiAimConstraint.data.offset and clamp within limits
-    //    var d = _aimConstraint.data;
-    //    Vector3 current = d.offset;
-    //    Vector3 target = current + new Vector3(0, xOffset, yOffset);
-
-    //    // Clamp X and Y separately
-    //    target.y = Mathf.Clamp(target.y, AimOffsetLimitX.x, AimOffsetLimitX.y);
-
-
-    //    d.offset = target;
-    //    _aimConstraint.data = d;
-    //    Debug.Log($"Recoil applied: {_aimConstraint.data.offset}");
-    //    // Start returning to saved before-shoot offset
-    //    returningToCenter = true;
-    //}
+    }
 
 
     #endregion

@@ -7,6 +7,7 @@ public class BuffManagerWindow : EditorWindow
 {
     private Vector2 scrollPos;
     private List<Buff> buffs;
+    private Dictionary<Buff, string> editingNames = new Dictionary<Buff, string>();
 
     [MenuItem("Tools/Buff Manager")]
     public static void OpenWindow()
@@ -27,6 +28,14 @@ public class BuffManagerWindow : EditorWindow
             string path = AssetDatabase.GUIDToAssetPath(guid);
             return AssetDatabase.LoadAssetAtPath<Buff>(path);
         }).ToList();
+
+        // Init editing cache
+        editingNames.Clear();
+        foreach (var buff in buffs)
+        {
+            if (buff != null)
+                editingNames[buff] = buff.buffName;
+        }
     }
 
     private void OnGUI()
@@ -47,16 +56,29 @@ public class BuffManagerWindow : EditorWindow
 
                 EditorGUILayout.BeginVertical("box");
 
-                // Asset rename
+                // --- Name Field with Apply/Revert ---
                 EditorGUILayout.BeginHorizontal();
-                string newName = EditorGUILayout.TextField("Buff Asset Name", buff.name);
-                if (newName != buff.name && !string.IsNullOrEmpty(newName))
+                GUI.SetNextControlName("NameField_" + buff.GetInstanceID());
+                editingNames[buff] = EditorGUILayout.TextField("Name", editingNames[buff]);
+
+                // Detect Enter key while typing in this field
+                if (Event.current.type == EventType.KeyDown &&
+                    Event.current.keyCode == KeyCode.Return &&
+                    GUI.GetNameOfFocusedControl() == "NameField_" + buff.GetInstanceID())
                 {
-                    string path = AssetDatabase.GetAssetPath(buff);
-                    AssetDatabase.RenameAsset(path, newName);
-                    buff.buffName = newName; // Sync
-                    EditorUtility.SetDirty(buff);
-                    AssetDatabase.SaveAssets();
+                    ApplyRename(buff);
+                    Event.current.Use(); // consume event so it doesn’t "ding"
+                }
+
+                if (GUILayout.Button("Apply", GUILayout.Width(60)))
+                {
+                    ApplyRename(buff);
+                }
+
+                if (GUILayout.Button("Revert", GUILayout.Width(60)))
+                {
+                    // Reset input to actual asset name
+                    editingNames[buff] = buff.buffName;
                 }
 
                 if (GUILayout.Button("Delete", GUILayout.Width(60)))
@@ -70,20 +92,19 @@ public class BuffManagerWindow : EditorWindow
                 }
                 EditorGUILayout.EndHorizontal();
 
+
                 EditorGUILayout.Space();
 
-                // Icon + details
+                // --- Icon + type ---
                 EditorGUILayout.BeginHorizontal();
                 buff.icon = (Sprite)EditorGUILayout.ObjectField(buff.icon, typeof(Sprite), false, GUILayout.Width(64), GUILayout.Height(64));
 
                 EditorGUILayout.BeginVertical();
-                buff.buffName = EditorGUILayout.TextField("Display Name", buff.buffName);
-                buff.statBuff = EditorGUILayout.FloatField("Stat Buff", buff.statBuff);
-                buff.buffLevel = EditorGUILayout.IntField("Buff Level", buff.buffLevel);
+                buff.buffType = (Buff.BuffType)EditorGUILayout.EnumPopup("Buff Type", buff.buffType);
                 EditorGUILayout.EndVertical();
                 EditorGUILayout.EndHorizontal();
 
-                // Description
+                // --- Description ---
                 EditorGUILayout.LabelField("Description:");
                 buff.description = EditorGUILayout.TextArea(buff.description, GUILayout.MinHeight(40));
 
@@ -104,6 +125,9 @@ public class BuffManagerWindow : EditorWindow
     {
         Buff newBuff = ScriptableObject.CreateInstance<Buff>();
         newBuff.buffName = "New Buff";
+        newBuff.description = "Describe this buff here.";
+        newBuff.buffType = Buff.BuffType.Speed;
+
         string path = "Assets/Resources/ScriptableObjects/Buffs";
         if (!AssetDatabase.IsValidFolder(path))
         {
@@ -115,4 +139,22 @@ public class BuffManagerWindow : EditorWindow
         AssetDatabase.SaveAssets();
         LoadAllBuffs();
     }
+
+    private void ApplyRename(Buff buff)
+    {
+        string newName = editingNames[buff];
+        if (!string.IsNullOrEmpty(newName) && newName != buff.buffName)
+        {
+            // Update scriptable object field
+            buff.buffName = newName;
+
+            // Rename asset file
+            string path = AssetDatabase.GetAssetPath(buff);
+            AssetDatabase.RenameAsset(path, newName);
+
+            EditorUtility.SetDirty(buff);
+            AssetDatabase.SaveAssets();
+        }
+    }
+
 }

@@ -13,13 +13,10 @@ public class BuffPickup : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            //var playerBuffs = other.GetComponent<PlayerBuffHandler>();
-            //if (playerBuffs != null)
-            //{
-            //    playerBuffs.ApplyBuff(buffData);
-            //}
+            GameManager.Instance.ApplyBuff(buffData.buffType);
 
             BuffManager.Instance.Despawn(this);
         }
     }
+
 }
