@@ -56,6 +56,10 @@ public class RunState : PlayerState
         {
             return PlayerStateMachine.EPlayerState.Reload;
         }
+        if (Context.IsJumping)
+        {
+            return PlayerStateMachine.EPlayerState.Jump;
+        }
         return StateKey;
     }
 

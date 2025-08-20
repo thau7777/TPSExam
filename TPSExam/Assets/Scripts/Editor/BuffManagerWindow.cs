@@ -126,7 +126,7 @@ public class BuffManagerWindow : EditorWindow
         Buff newBuff = ScriptableObject.CreateInstance<Buff>();
         newBuff.buffName = "New Buff";
         newBuff.description = "Describe this buff here.";
-        newBuff.buffType = Buff.BuffType.Speed;
+        newBuff.buffType = Buff.BuffType.MovementSpeed;
 
         string path = "Assets/Resources/ScriptableObjects/Buffs";
         if (!AssetDatabase.IsValidFolder(path))

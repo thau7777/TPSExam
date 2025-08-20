@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 8359639356006738134}
   m_Layer: 0
   m_Name: AimTarget
-  m_TagString: Untagged
+  m_TagString: AimTarget
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -68,7 +68,7 @@ GameObject:
   - component: {fileID: 2853487574912715777}
   m_Layer: 0
   m_Name: FreeLook Camera
-  m_TagString: Untagged
+  m_TagString: CinemachineCamera
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -81,14 +81,14 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7297752179851187573}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.0016068685, y: -2.0156729e-10, z: -3.287143e-13, w: 0.99999875}
+  m_LocalRotation: {x: 0.0016056981, y: 0, z: 0, w: 0.99999875}
   m_LocalPosition: {x: 0, y: 1.392268, z: -4.4157095}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 3537195127538237405}
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0.184, y: 0, z: 0}
 --- !u!114 &2675080205219714541
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -152,7 +152,7 @@ MonoBehaviour:
     RotationDamping: {x: 1, y: 1, z: 1}
     QuaternionDamping: 1
   OrbitStyle: 0
-  Radius: 4.63
+  Radius: 5
   Orbits:
     Top:
       Radius: 2
@@ -178,7 +178,7 @@ MonoBehaviour:
   VerticalAxis:
     Value: 17.5
     Center: 17.5
-    Range: {x: -10, y: 45}
+    Range: {x: -18.87, y: 66.7}
     Wrap: 0
     Recentering:
       Enabled: 0
@@ -311,6 +311,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   NoiseProfile: {fileID: 11400000, guid: 69ce8388f6785dd4c8c39915efece2f4, type: 2}
   PivotOffset: {x: 0, y: 0, z: 0}
-  AmplitudeGain: 1
-  FrequencyGain: 1
+  AmplitudeGain: 0
+  FrequencyGain: 0
   m_NoiseOffsets: {x: 860.7573, y: -4.1033325, z: 315.14023}

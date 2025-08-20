@@ -5,8 +5,8 @@ public class Damageable : MonoBehaviour
 {
 
     [SerializeField]
-    private float _currentHealth;
-    public float CurrentHealth
+    private int _currentHealth;
+    public int CurrentHealth
     {
         get { return _currentHealth; }
         set
@@ -16,8 +16,8 @@ public class Damageable : MonoBehaviour
     }
 
     [SerializeField]
-    private float _maxHealth = 100;
-    public float MaxHealth
+    private int _maxHealth = 100;
+    public int MaxHealth
     {
         get { return _maxHealth; }
         set
@@ -27,13 +27,13 @@ public class Damageable : MonoBehaviour
     }
 
 
-    public UnityEvent<float> OnDamaged;
+    public UnityEvent<int> OnDamaged;
 
     private void Awake()
     {
         CurrentHealth = MaxHealth;
     }
-    public void TakeDamage(float damage)
+    public void TakeDamage(int damage)
     {
         if (damage <= 0) return;
         CurrentHealth -= damage;
@@ -43,10 +43,5 @@ public class Damageable : MonoBehaviour
     public void ResetHealth()
     {
         CurrentHealth = MaxHealth;
-    }
-
-    public void IncreaseMaxHealth(float value)
-    {
-
     }
 }

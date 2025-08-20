@@ -2,12 +2,8 @@ using UnityEngine;
 
 public class EnemyAttack : MonoBehaviour
 {
-    private Collider _collider;
-    public float attackDamage; // Damage dealt to the player
-    private void Awake()
-    {
-        _collider = GetComponent<Collider>();
-    }
+    public int attackDamage; // Damage dealt to the player
+
 
     private void OnTriggerEnter(Collider other)
     {
@@ -17,7 +13,7 @@ public class EnemyAttack : MonoBehaviour
             if (damageable != null)
             {
                 damageable.TakeDamage(attackDamage);
-                Debug.Log($"Player took {attackDamage} damage from enemy attack.");
+                
             }
         }
     }

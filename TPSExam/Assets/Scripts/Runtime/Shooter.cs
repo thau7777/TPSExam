@@ -23,6 +23,7 @@ public class Shooter : MonoBehaviour
 
     [Tooltip("Select all layers to ignore in the Inspector")]
     public LayerMask ignoreLayers;
+    public LayerMask shootIgnoreLayers;
 
     private Vector3 targetPosition;
     public float smoothTime = 0.1f;
@@ -38,9 +39,10 @@ public class Shooter : MonoBehaviour
 
     private bool _isShootingHeld; // from input
     private bool _isAiming;
+    private bool _isJumping;
 
     [SerializeField]
-    private float _bulletDamage = 10f; // Damage dealt by bullets
+    private float _bulletDamage = 10; // Damage dealt by bullets
     [SerializeField]
     private ParticleSystem _muzzleFlash;
     [SerializeField]
@@ -50,7 +52,7 @@ public class Shooter : MonoBehaviour
     [SerializeField]
     private GameObject _grenadePrefab;
     [SerializeField]
-    private float _grenadeDamage = 50f; // Damage dealt by the grenade
+    private float _grenadeDamage = 50; // Damage dealt by the grenade
     [SerializeField]
     private float _grenadeKnockbackForce = 5; // Damage dealt by the grenade
     [SerializeField]
@@ -66,7 +68,8 @@ public class Shooter : MonoBehaviour
                 _animator.SetBool("IsAutoShot", false); // Loop anim until release
                 _muzzleFlash.Stop();
                 _muzzleLight.StopLooping();
-                Debug.Log("1 tick No ammo sound played");
+                GameManager.Instance.onOutOfAmmo?.Invoke(CurrentShootingMethod);
+                AudioManager.Instance.PlaySFX("NoAmmoShoot");
             }
         }
     }
@@ -169,8 +172,14 @@ public class Shooter : MonoBehaviour
             smoothTime
         );
     }
-    private void SetIsAiming(bool value)
+    public void SetIsJumping(bool value)
     {
+        _isJumping = value;
+    }
+    public void SetIsAiming(bool value)
+    {
+        if (_isJumping)
+            return;
         _isAiming = value;
         if (!_isAiming && CurrentShootingMethod == EShootingMethod.Auto)
         {
@@ -192,7 +201,8 @@ public class Shooter : MonoBehaviour
 
         if (_currentAmmo == 0 && isPressed)
         {
-            Debug.Log("1 tick No ammo sound played");
+            GameManager.Instance.onOutOfAmmo?.Invoke(CurrentShootingMethod);
+            AudioManager.Instance.PlaySFX("NoAmmoShoot");
             _isShootingHeld = false;
             return;
         }
@@ -213,7 +223,14 @@ public class Shooter : MonoBehaviour
             break;
 
         case EShootingMethod.SingleShot:
-                if (!isPressed || CurrentAmmo < 10) return;
+                if (!isPressed) return;
+                else if(isPressed && CurrentAmmo < 10)
+                {
+                    AudioManager.Instance.PlaySFX("NoAmmoShoot");
+                    GameManager.Instance.onOutOfAmmo?.Invoke(CurrentShootingMethod);
+                    return;
+                }
+
                 TryShootOnce("SingleShot", _singleShotCooldown, ref _lastSingleShotTime);
                 break;
 
@@ -240,6 +257,7 @@ public class Shooter : MonoBehaviour
             System.Enum.GetValues(typeof(EShootingMethod)).Length);
 
         GameManager.Instance.onChangeShootingMode?.Invoke((int)CurrentShootingMethod);
+        AudioManager.Instance.PlaySFX("ChangeShootingMode");
     }
 
     
@@ -251,6 +269,8 @@ public class Shooter : MonoBehaviour
 
         _animator.Play(shootAnim, 1);
         lastShootTime = Time.time;
+
+        GameManager.Instance.onSpecialShoot?.Invoke(shootAnim,cooldown);
     }
 
     public void StartShoot() // Animation event
@@ -259,7 +279,11 @@ public class Shooter : MonoBehaviour
         {
             case EShootingMethod.Auto:
             case EShootingMethod.BurstShot:
-                if (CurrentAmmo <= 0) return;
+                if (CurrentAmmo <= 0)
+                {
+                    AudioManager.Instance.PlaySFX("NoAmmoShoot");
+                    return;
+                }
                 ShootRaycast();
                 break;
             case EShootingMethod.SingleShot:
@@ -280,26 +304,34 @@ public class Shooter : MonoBehaviour
             StartCoroutine(PlayMuzzleOnce());
             _muzzleLight.PlayOnce();
         }
-        CurrentAmmo -= 1;
+        if (!_hasInfinityBullet)
+            CurrentAmmo -= 1;
+
         var direction = _shootingPoint.up;
         Ray ray = new Ray(_shootingPoint.position, direction.normalized);
-        if (Physics.Raycast(ray, out RaycastHit hitInfo, maxDistance + 10))
-        {
-            string ParticleEffectId = hitInfo.collider.gameObject.layer == LayerMask.NameToLayer("Enemy") ? "BloodImpact" : "BulletImpact";
 
-            ParticleManager .Instance.Spawn(ParticleEffectId, hitInfo.point, Quaternion.LookRotation(hitInfo.normal));
+        // 👇 Use layerMask: ~ignoreLayers
+        if (Physics.Raycast(ray, out RaycastHit hitInfo, maxDistance + 10, ~shootIgnoreLayers))
+        {
+            string ParticleEffectId = hitInfo.collider.gameObject.layer == LayerMask.NameToLayer("Enemy")
+                ? "BloodImpact"
+                : "BulletImpact";
+
+            ParticleManager.Instance.Spawn(ParticleEffectId, hitInfo.point, Quaternion.LookRotation(hitInfo.normal));
 
             if (hitInfo.collider.TryGetComponent<Damageable>(out Damageable damageable))
             {
-                damageable.TakeDamage(_bulletDamage); // Example damage value
+                damageable.TakeDamage((int)_bulletDamage);
             }
         }
+        AudioManager.Instance.PlaySFX("BulletShoot");
     }
+
     private void ShootGrenade()
     {
-        CurrentAmmo -= 10;
-
-        Debug.Log($"Grenade shot! Current ammo: {CurrentAmmo}");
+        if(!_hasInfinityGrenade)
+            CurrentAmmo -= 10;
+        AudioManager.Instance.PlaySFX("GrenadeShoot");
         // Instantiate grenade at shooting point
         GrenadeProjectile grenade = Instantiate(
             _grenadePrefab, // assign in Inspector
@@ -366,15 +398,16 @@ public class Shooter : MonoBehaviour
         _infinityGrenadeCoroutine = null;
     }
 
-    private void OnPickupGrenadeDamageBuff(float amount)
+    private void OnPickupGrenadeDamageBuff(int percent)
     {
-        _grenadeDamage += _grenadeDamage * amount; // add percentage increase
+        _grenadeDamage *= 1f + (percent / 100f);
     }
 
-    private void OnPickupBulletDamageBuff(float amount)
+    private void OnPickupBulletDamageBuff(int percent)
     {
-        _bulletDamage += _bulletDamage * amount;// add percentage increase
+        _bulletDamage *= 1f + (percent / 100f);
     }
+
 
     private void OnPickupReloadSpeedBuff(float amount)
     {
@@ -386,5 +419,6 @@ public class Shooter : MonoBehaviour
     private void OnPickupAmmo(int amount)
     {
         TotalAmmoRemaining += amount;
+        GameManager.Instance.UpdateAmmo(CurrentAmmo, TotalAmmoRemaining);
     }
 }

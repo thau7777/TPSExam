@@ -13,6 +13,13 @@ public class ScoreDisplay : MonoBehaviour
     private Coroutine animCoroutine;
     private Vector3 originalScale;
 
+    [SerializeField]
+    private GameObject _gameEndContainer;
+    [SerializeField]
+    private TextMeshProUGUI _gameEndText;
+    [SerializeField]
+    private TextMeshProUGUI _gameEndScoreText;
+
     private void Awake()
     {
         if (!scoreText) scoreText = GetComponent<TextMeshProUGUI>();
@@ -22,12 +29,23 @@ public class ScoreDisplay : MonoBehaviour
     private void OnEnable()
     {
         GameManager.Instance.onEnemyDeath += UpdateScore;
+        GameManager.Instance.onGameOver += OnGameOver;
     }
 
     private void OnDisable()
     {
         GameManager.Instance.onEnemyDeath -= UpdateScore;
+        GameManager.Instance.onGameOver -= OnGameOver;
     }
+
+    private void OnGameOver(bool isWin)
+    {
+        _gameEndContainer.SetActive(true);
+        _gameEndText.text = isWin ? "You Win!" : "Game Over!";
+        _gameEndScoreText.text = $"Score: {currentScore}";
+    }
+
+
     private void UpdateScore(int value)
     {
         SetScore(currentScore + value);

@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
@@ -7,15 +8,52 @@ public class ShootingMethodDisplay : MonoBehaviour
     [SerializeField] private Image autoImage;
     [SerializeField] private Image burstImage;
     [SerializeField] private Image grenadeImage;
-
+    private Coroutine cooldownRoutine;
     private void OnEnable()
     {
         GameManager.Instance.onChangeShootingMode += UpdateShootingMethodDisplay;
+        GameManager.Instance.onSpecialShoot += UpdateShotCooldown;
     }
 
     private void OnDisable()
     {
         GameManager.Instance.onChangeShootingMode -= UpdateShootingMethodDisplay;
+        GameManager.Instance.onSpecialShoot -= UpdateShotCooldown;
+    }
+    private void UpdateShotCooldown(string animName, float cooldown)
+    {
+        if (cooldownRoutine != null)
+            StopCoroutine(cooldownRoutine);
+
+        // Pick which image to animate
+        Image targetImage = null;
+        switch (animName)
+        {
+            case "BurstShot":
+                targetImage = burstImage;
+                break;
+            case "SingleShot":
+                targetImage = grenadeImage;
+                break;
+        }
+
+        cooldownRoutine = StartCoroutine(CooldownFillRoutine(targetImage, cooldown));
+    }
+
+    private IEnumerator CooldownFillRoutine(Image img, float cooldown)
+    {
+        img.fillAmount = 0f; // start empty
+        float time = 0f;
+
+        while (time < cooldown)
+        {
+            time += Time.deltaTime;
+            img.fillAmount = Mathf.Clamp01(time / cooldown);
+            yield return null;
+        }
+
+        img.fillAmount = 1f; // snap full
+        cooldownRoutine = null;
     }
 
     private void UpdateShootingMethodDisplay(int methodIndex)

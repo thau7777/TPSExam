@@ -14,6 +14,8 @@ public class InputReader : ScriptableObject, InputActions.IPlayerActions
     public Action onChangeShootingMethod;
     public Action onJump;
     public Action onReload;
+    public Action onShowInstruction;
+    public Action onPause;
     private void OnEnable()
     {
         if (input == null)
@@ -26,11 +28,22 @@ public class InputReader : ScriptableObject, InputActions.IPlayerActions
 
     private void OnDisable()
     {
+        DisableInput();
+
+    }
+    public void EnableInput()
+    {
+        if (input != null)
+        {
+            input.Player.Enable();
+        }
+    }
+    public void DisableInput()
+    {
         if (input != null)
         {
             input.Player.Disable();
         }
-
     }
 
     public void OnMove(InputAction.CallbackContext context)
@@ -81,6 +94,22 @@ public class InputReader : ScriptableObject, InputActions.IPlayerActions
         if(context.performed)
         {
             onReload?.Invoke();
+        }
+    }
+
+    public void OnShowInstruction(InputAction.CallbackContext context)
+    {
+        if(context.performed)
+        {
+            onShowInstruction?.Invoke();
+        }
+    }
+
+    public void OnPause(InputAction.CallbackContext context)
+    {
+        if (context.performed)
+        {
+            onPause?.Invoke();
         }
     }
 }

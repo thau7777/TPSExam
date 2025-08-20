@@ -4,7 +4,7 @@ public class GrenadeProjectile : MonoBehaviour
 {
     public float explosionRadius = 5f;
     public float knockbackForce = 5;
-    public float damage = 50f;
+    public float damage = 50;
     public LayerMask enemyLayer;
     public float lifetime = 5f;
 
@@ -44,24 +44,24 @@ public class GrenadeProjectile : MonoBehaviour
     private void Explode()
     {
         // Spawn explosion effect
-        ParticleManager .Instance.Spawn("SmallExplosion", transform.position, Quaternion.identity);
-
+        ParticleManager.Instance.Spawn("SmallExplosion", transform.position, Quaternion.identity);
+        AudioManager.Instance.PlaySFX("Explosion");
         // Damage & knockback
         Collider[] hits = Physics.OverlapSphere(transform.position, explosionRadius, enemyLayer);
         foreach (Collider hit in hits)
         {
             if (hit.TryGetComponent<Damageable>(out Damageable damageable))
             {
-                damageable.TakeDamage(damage);
+                damageable.TakeDamage((int)damage);
             }
 
-            if (hit.TryGetComponent<SwarmAI>(out SwarmAI swarm))
+            if (hit.TryGetComponent<EnemyAI>(out EnemyAI swarm))
             {
                 if (!hit.CompareTag("Fish"))
                     continue;
 
                 Vector3 direction = (hit.transform.position - transform.position).normalized;
-                swarm.ApplyKnockback(direction * knockbackForce, 0.5f);
+                swarm.ApplyKnockback(direction * knockbackForce, 1f);
             }
         }
 

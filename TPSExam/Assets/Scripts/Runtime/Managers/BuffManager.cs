@@ -1,41 +1,52 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.Pool;
-using System.Linq;
 using System.Collections.Generic;
 
-public class BuffManager : PersistentSingleton<BuffManager>
+public class BuffManager : Singleton<BuffManager>
 {
-    [SerializeField] private BuffPickup prefab;
-    private ObjectPool<BuffPickup> pool;
+    [System.Serializable]
+    public class BuffPrefabEntry
+    {
+        public Buff.BuffType type;
+        public BuffPickup prefab;
+        public int defaultCapacity = 5;
+        public int maxCapacity = 20;
+        public int ratio;
+    }
 
-    [SerializeField] private List<Buff> allBuffs;
+    [SerializeField] private List<BuffPrefabEntry> buffPrefabs = new List<BuffPrefabEntry>();
+
+    private Dictionary<Buff.BuffType, ObjectPool<BuffPickup>> _pools
+        = new Dictionary<Buff.BuffType, ObjectPool<BuffPickup>>();
+    private Dictionary<BuffPickup, Buff.BuffType> _prefabToType
+        = new Dictionary<BuffPickup, Buff.BuffType>();
 
     protected override void Awake()
     {
         base.Awake();
-
-        // Load all Buff ScriptableObjects from the project
-        string[] guids = UnityEditor.AssetDatabase.FindAssets("t:Buff");
-        allBuffs = guids.Select(guid =>
+        foreach (var entry in buffPrefabs)
         {
-            string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
-            return UnityEditor.AssetDatabase.LoadAssetAtPath<Buff>(path);
-        }).ToList();
+            if (entry.prefab == null) continue;
 
-        pool = new ObjectPool<BuffPickup>(
-            CreateFunc,
-            OnGetFromPool,
-            OnReleaseToPool,
-            OnDestroyPoolObject,
-            false, // collectionCheck: disable if you want more speed
-            10,    // default capacity
-            100    // max size
-        );
+            var pool = new ObjectPool<BuffPickup>(
+                () => CreateInstance(entry.prefab, entry.type),
+                OnGetFromPool,
+                OnReleaseToPool,
+                OnDestroyPoolObject,
+                false,
+                entry.defaultCapacity,
+                entry.maxCapacity
+            );
+
+            _pools[entry.type] = pool;
+            _prefabToType[entry.prefab] = entry.type;
+        }
     }
 
-    private BuffPickup CreateFunc()
+    private BuffPickup CreateInstance(BuffPickup prefab, Buff.BuffType type)
     {
         var obj = Instantiate(prefab);
+        obj.SetBuffType(type); // 👈 new helper in BuffPickup (see below)
         obj.gameObject.SetActive(false);
         return obj;
     }
@@ -55,51 +66,108 @@ public class BuffManager : PersistentSingleton<BuffManager>
         Destroy(obj.gameObject);
     }
 
-    /// <summary>
-    /// Spawn a BuffPickup with a specific Buff.
-    /// </summary>
-    public BuffPickup Spawn(Vector3 position, Buff buff)
+    public BuffPickup SpawnByType(Vector3 position, Quaternion rotation, Buff.BuffType type, Transform parent = null)
     {
-        BuffPickup pickup = pool.Get();
-        pickup.transform.position = position;
-        pickup.Init(buff);
+        if (!_pools.ContainsKey(type))
+        {
+            Debug.LogWarning($"No Buff prefab registered for type {type}");
+            return null;
+        }
+
+        var pickup = _pools[type].Get();
+        pickup.transform.SetPositionAndRotation(position, rotation);
+        if (parent != null) pickup.transform.SetParent(parent);
+
         return pickup;
     }
 
-    /// <summary>
-    /// Spawn a BuffPickup with a random Buff.
-    /// </summary>
-    public BuffPickup SpawnRandom(Vector3 position)
+    public BuffPickup SpawnRandom(Vector3 position, Quaternion rotation, Transform parent = null)
     {
-        if (allBuffs == null || allBuffs.Count == 0)
+        if (buffPrefabs.Count == 0)
         {
-            Debug.LogWarning("No Buffs found in project!");
+            Debug.LogWarning("No Buff prefabs registered in BuffManager!");
             return null;
         }
 
-        Buff randomBuff = allBuffs[Random.Range(0, allBuffs.Count)];
-        return Spawn(position, randomBuff);
-    }
-
-    /// <summary>
-    /// Spawn a BuffPickup by BuffType (if you want a specific type).
-    /// </summary>
-    public BuffPickup SpawnByType(Vector3 position, Buff.BuffType type)
-    {
-        var candidates = allBuffs.Where(b => b.buffType == type).ToList();
-        if (candidates.Count == 0)
+        // 1. Calculate total weight
+        int totalRatio = 0;
+        foreach (var entry in buffPrefabs)
         {
-            Debug.LogWarning($"No Buff of type {type} found!");
+            if (_pools.ContainsKey(entry.type)) // skip invalid
+                totalRatio += entry.ratio;
+        }
+
+        if (totalRatio <= 0)
+        {
+            Debug.LogWarning("All buff ratios are zero or invalid!");
             return null;
         }
 
-        Buff chosenBuff = candidates[Random.Range(0, candidates.Count)];
-        return Spawn(position, chosenBuff);
+        // 2. Pick a random number within total weight
+        int randomValue = Random.Range(0, totalRatio);
+        int cumulative = 0;
+
+        // 3. Find which buff it falls into
+        foreach (var entry in buffPrefabs)
+        {
+            if (!_pools.ContainsKey(entry.type)) continue;
+
+            cumulative += entry.ratio;
+            if (randomValue < cumulative)
+            {
+                return SpawnByType(position, rotation, entry.type, parent);
+            }
+        }
+
+        return null; // Should never hit here
     }
+
 
     public void Despawn(BuffPickup pickup)
     {
-        pool.Release(pickup);
+        if (pickup == null) return;
+
+        var type = pickup.BuffType;
+        if (_pools.ContainsKey(type))
+        {
+            _pools[type].Release(pickup);
+        }
+        else
+        {
+            Debug.LogWarning($"Tried to despawn {pickup.name}, but no pool was found. Destroying instead.");
+            Destroy(pickup.gameObject);
+        }
+    }
+
+    public void ResetManager()
+    {
+        // Clear all active buffs in the scene
+        foreach (var pool in _pools.Values)
+        {
+            pool.Clear(); // releases + destroys all pooled objects
+        }
+
+        _pools.Clear();
+        _prefabToType.Clear();
+
+        // Rebuild pools from buffPrefabs
+        foreach (var entry in buffPrefabs)
+        {
+            if (entry.prefab == null) continue;
+
+            var pool = new ObjectPool<BuffPickup>(
+                () => CreateInstance(entry.prefab, entry.type),
+                OnGetFromPool,
+                OnReleaseToPool,
+                OnDestroyPoolObject,
+                false,
+                entry.defaultCapacity,
+                entry.maxCapacity
+            );
+
+            _pools[entry.type] = pool;
+            _prefabToType[entry.prefab] = entry.type;
+        }
     }
 
 }

@@ -10,6 +10,8 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
 {
     [Header("References")]
     [SerializeField] private Transform _gun;
+    private bool _wasInDanger = false;
+
     [SerializeField] private Transform _leftHand;
     [SerializeField] private Transform _rightHand;
     [SerializeField] private MultiAimConstraint _aimConstraint;
@@ -52,7 +54,7 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
     Vector3 ogAimConstraintOffset;
 
     [Header("Buffs Value")]
-    [SerializeField] private float _healthRegenPercent = 1f; // percent per second
+    [SerializeField] private int _healthRegenPercent = 1; // percent per second
 
     protected override void OnEnable()
     {
@@ -77,19 +79,28 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
         GameManager.Instance.onPickupMaxHealthBuff -= OnPickupMaxHealthBuff;
         GameManager.Instance.onPickupHealthRegenBuff -= OnPickupHealthRegenBuff;
         GameManager.Instance.onPickupInstantHealBuff -= OnPickupInstantHealBuff;
+
+        _context.onIsJumpingChange -= _shooter.SetIsJumping;
     }
 
 
-    private void OnPickupInstantHealBuff(float obj)
+    private void OnPickupInstantHealBuff(int obj)
     {
         _damageable.CurrentHealth += obj;
         if(_damageable.CurrentHealth > _damageable.MaxHealth)
         {
             _damageable.CurrentHealth = _damageable.MaxHealth;
         }
+        GameManager.Instance.onCurrentHealthChange?.Invoke(_damageable.CurrentHealth,_damageable.MaxHealth);
+        if (_damageable.CurrentHealth > _damageable.MaxHealth * 0.3f && _wasInDanger)
+        {
+            GameManager.Instance.OnPlayerHealthDanger(false);
+            _wasInDanger = false;
+        }
+
     }
 
-    private void OnPickupHealthRegenBuff(float obj)
+    private void OnPickupHealthRegenBuff(int obj)
     {
         _healthRegenPercent += obj;
     }
@@ -101,22 +112,34 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
 
             if (_damageable.CurrentHealth < _damageable.MaxHealth)
             {
-                float regenAmount = _damageable.MaxHealth * (_healthRegenPercent / 100f);
-                _damageable.CurrentHealth = Mathf.Min(_damageable.CurrentHealth + regenAmount, _damageable.MaxHealth);
+                int regenAmount = Mathf.Max(1, Mathf.RoundToInt(_damageable.MaxHealth * (_healthRegenPercent / 100f)));
 
+                _damageable.CurrentHealth = Mathf.Min(_damageable.CurrentHealth + regenAmount, _damageable.MaxHealth);
+                GameManager.Instance.onCurrentHealthChange?.Invoke(_damageable.CurrentHealth, _damageable.MaxHealth);
+                
             }
+
+            if (_damageable.CurrentHealth > _damageable.MaxHealth * 0.3f && _wasInDanger)
+            {
+                GameManager.Instance.OnPlayerHealthDanger(false);
+                _wasInDanger = false;
+            }
+
         }
     }
-    private void OnPickupMaxHealthBuff(float obj)
+    private void OnPickupMaxHealthBuff(int percent)
     {
-        _damageable.MaxHealth += _damageable.MaxHealth * obj;
+        // Increase MaxHealth by given percent
+        _damageable.MaxHealth += Mathf.RoundToInt(_damageable.MaxHealth * (percent / 100f));
     }
 
     private void OnPickupSpeedBuff(float percent)
     {
+        // Increase run speed by given percent
         _runSpeed += _runSpeed * (percent / 100f);
         _runSpeed = Mathf.Clamp(_runSpeed, 1f, 10f);
     }
+
 
 
     private void Awake()
@@ -144,6 +167,9 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
         ogAimConstraintOffset = _aimConstraint.data.offset;
 
         InitializeStates();
+
+        _context.onIsJumpingChange += _shooter.SetIsJumping;
+
     }
     private void InitializeStates()
     {
@@ -185,7 +211,6 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
     protected override void Update()
     {
         UpdateMovement();
-        //UpdateRecoilRecovery();
         base.Update();
     }
     private void UpdateMovement()
@@ -209,24 +234,7 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
         _context.HorizontalVelocity = Vector3.zero; // Reset final velocity after applying movement
     }
 
-    //void UpdateRecoilRecovery()
-    //{
-    //    if (returningToCenter && _aimConstraint != null)
-    //    {
-    //        // lerp the constraint offset back to saved before-shoot offset
-    //        var d = _aimConstraint.data;
-    //        d.offset = Vector3.Lerp(d.offset, ogAimConstraintOffset, Time.deltaTime * recoilReturnSpeed);
-    //        _aimConstraint.data = d;
-
-    //        // Stop lerping when close enough
-    //        if (Vector3.Distance(d.offset, ogAimConstraintOffset) < 0.001f)
-    //        {
-    //            d.offset = ogAimConstraintOffset;
-    //            _aimConstraint.data = d;
-    //            returningToCenter = false;
-    //        }
-    //    }
-    //}
+   
     private void OnStateChangedListener(EPlayerState state)
     {
         switch (state)
@@ -246,13 +254,16 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
     
     private void OnJump()
     {
-        throw new NotImplementedException();
+        if (_context.IsAiming || _context.IsReloading)
+            return;
+        _context.IsJumping = true;
     }
 
     private void OnReload()
     {
-        if (_shooter.CurrentAmmo == _shooter.AmmoPerCapacity || _shooter.TotalAmmoRemaining == 0)
+        if (_shooter.CurrentAmmo == _shooter.AmmoPerCapacity || _shooter.TotalAmmoRemaining == 0 || _context.IsJumping)
             return;
+        AudioManager.Instance.PlaySFX("Reload");
         _context.IsReloading = true;
         if (_context.MoveInput != Vector2.zero)
         {
@@ -267,13 +278,12 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
 
     private void OnAim(bool value)
     {
+        if (_context.IsJumping || _context.IsReloading)
+            return;
+
+
         _context.IsAiming = value;
-
-        if (_context.IsReloading)
-            return; // Don't allow aiming while reloading
-
         _context.TargetSpeed = value ? _strafeSpeed : _runSpeed;
-
 
         if (value && _zoomCoroutine != null)
         {
@@ -284,8 +294,9 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
         {
             _zoomCoroutine = StartCoroutine(ResetCameraSettings(0.5f));
         }
-
     }
+
+
     private IEnumerator ResetCameraSettings(float duration)
     {
         float t = 0f;
@@ -374,13 +385,40 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
         }
 
     }
-
-    public void OnTakeDamage()
+    [ContextMenu("TestDie")]
+    public void TestDie()
     {
+        OnTakeDamage(0);
+    }
+    public void OnTakeDamage(int currentHealth)
+    {
+        GameManager.Instance.onCurrentHealthChange?.Invoke(currentHealth, _damageable.MaxHealth);
 
+        if (currentHealth <= 0)
+        {
+            AudioManager.Instance.PlayMusic("GameOver");
+            _animator.CrossFade("Die", 0.1f);
+            _inputReader.DisableInput();
+        }
+        else
+        {
+            AudioManager.Instance.PlaySFX("PlayerHit");
+            bool isDanger = currentHealth <= _damageable.MaxHealth * 0.3f;
+
+            // Only fire event if state changed
+            if (isDanger != _wasInDanger)
+            {
+                GameManager.Instance.OnPlayerHealthDanger(isDanger);
+                _wasInDanger = isDanger;
+            }
+        }
     }
 
 
+    public void OnDeadAnimationEnd()
+    {
+        GameManager.Instance.onGameOver?.Invoke(false);
+    }
     #endregion
 
 }

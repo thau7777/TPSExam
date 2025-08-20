@@ -1,3 +1,4 @@
+using System;
 using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.Animations.Rigging;
@@ -17,6 +18,18 @@ public class PlayerContext
     public Vector2 MoveInput;
     public bool IsAiming;
     public bool IsShooting;
+    private bool _isJumping;
+
+    public Action<bool> onIsJumpingChange;
+    public bool IsJumping
+    {
+        get => _isJumping;
+        set
+        {
+            _isJumping = value;
+            onIsJumpingChange?.Invoke(value);
+        }
+    }
 
     public float CurrentSpeed;
     
@@ -56,5 +69,6 @@ public class PlayerContext
         CinemachineRotationComposer = cinemachineRotationComposer;
         CinemachineOrbitalFollow = cinemachineOrbitalFollow;
         IsReloading = false;
+        IsJumping = false;
     }
 }

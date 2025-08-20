@@ -15,8 +15,9 @@ public class PowerUpManager : Singleton<PowerUpManager>
 		}
 	}
 	
-	void Awake() {
-		this.powerUps = new Queue<CustomizablePowerUp>();
+	protected override void Awake() {
+		base.Awake();
+        this.powerUps = new Queue<CustomizablePowerUp>();
 		this.powerUpsLogs = new Queue<CustomizablePowerUp>();
 	}	
 

@@ -8,30 +8,43 @@ public class JumpState : PlayerState
 
     public override void EnterState()
     {
-        throw new System.NotImplementedException();
+        Context.Animator.CrossFade("Jump",Context.NextAnimCrossFadeTime);
+        Context.VelocityY = 3;
     }
 
     public override void UpdateState()
     {
-        throw new System.NotImplementedException();
+        UpdateHorizontalVelocity(Context.CurrentSpeed);
     }
     public override void FixedUpdate()
     {
-        throw new System.NotImplementedException();
+        
     }
     public override void LateUpdate()
     {
-        throw new System.NotImplementedException();
+        
     }
     public override void ExitState()
     {
-        throw new System.NotImplementedException();
+        Context.IsJumping = false; // Reset jumping state when exiting
     }
 
 
     public override PlayerStateMachine.EPlayerState GetNextState()
-    {
-        throw new System.NotImplementedException();
+    { 
+        Context.NextAnimCrossFadeTime = 0.1f;
+        if(Context.CharacterController.isGrounded)
+        {
+            if (Context.MoveInput != Vector2.zero)
+            {
+                return PlayerStateMachine.EPlayerState.Run;
+            }
+            else
+            {
+                return PlayerStateMachine.EPlayerState.Idle;
+            }
+        }
+        return StateKey;
     }
 
 

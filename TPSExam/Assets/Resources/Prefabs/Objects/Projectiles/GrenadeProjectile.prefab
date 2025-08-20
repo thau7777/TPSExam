@@ -221,7 +221,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   explosionRadius: 5
-  knockbackForce: 5
+  knockbackForce: 50
   damage: 50
   enemyLayer:
     serializedVersion: 2

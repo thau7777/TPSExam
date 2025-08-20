@@ -96,9 +96,8 @@ public class ReloadState : PlayerState
     public override PlayerStateMachine.EPlayerState GetNextState()
     {
         Context.NextAnimCrossFadeTime = 0.1f;
-        if (Context.IsAiming || !Context.IsReloading)
+        if (!Context.IsReloading)
         {
-            Context.IsAiming = false;
             if (Context.MoveInput != Vector2.zero)
             {
                 return PlayerStateMachine.EPlayerState.Run;

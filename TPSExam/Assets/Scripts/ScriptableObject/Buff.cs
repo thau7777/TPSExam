@@ -5,7 +5,7 @@ public class Buff : ScriptableObject
 {
     public enum BuffType
     {
-        Speed,
+        MovementSpeed,
         BulletDamage,
         GrenadeDamage,
         MaxHealth,
