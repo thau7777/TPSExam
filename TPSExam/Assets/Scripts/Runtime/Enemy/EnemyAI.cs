@@ -109,6 +109,7 @@ public class EnemyAI : MonoBehaviour
         if (currentHealth <= 0)
         {
             Die();
+            _animator.ResetTrigger(_hurtTrigger);
             return;
         }
         _animator.SetTrigger(_hurtTrigger);

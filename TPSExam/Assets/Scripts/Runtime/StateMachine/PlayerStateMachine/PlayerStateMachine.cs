@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using Unity.Cinemachine;
 using UnityEngine;
@@ -56,6 +56,7 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
     [Header("Buffs Value")]
     [SerializeField] private int _healthRegenPercent = 1; // percent per second
 
+    private bool _isDead = false;
     protected override void OnEnable()
     {
         base.OnEnable();
@@ -86,11 +87,7 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
 
     private void OnPickupInstantHealBuff(int obj)
     {
-        _damageable.CurrentHealth += obj;
-        if(_damageable.CurrentHealth > _damageable.MaxHealth)
-        {
-            _damageable.CurrentHealth = _damageable.MaxHealth;
-        }
+        _damageable.Heal(obj);
         GameManager.Instance.onCurrentHealthChange?.Invoke(_damageable.CurrentHealth,_damageable.MaxHealth);
         if (_damageable.CurrentHealth > _damageable.MaxHealth * 0.3f && _wasInDanger)
         {
@@ -114,9 +111,12 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
             {
                 int regenAmount = Mathf.Max(1, Mathf.RoundToInt(_damageable.MaxHealth * (_healthRegenPercent / 100f)));
 
-                _damageable.CurrentHealth = Mathf.Min(_damageable.CurrentHealth + regenAmount, _damageable.MaxHealth);
+                // ✅ Use Heal() instead of manually changing CurrentHealth
+                _damageable.Heal(regenAmount);
+
+                // If you want to keep the GameManager event, do it inside Heal() 
+                // or just keep this call:
                 GameManager.Instance.onCurrentHealthChange?.Invoke(_damageable.CurrentHealth, _damageable.MaxHealth);
-                
             }
 
             if (_damageable.CurrentHealth > _damageable.MaxHealth * 0.3f && _wasInDanger)
@@ -124,9 +124,9 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
                 GameManager.Instance.OnPlayerHealthDanger(false);
                 _wasInDanger = false;
             }
-
         }
     }
+
     private void OnPickupMaxHealthBuff(int percent)
     {
         // Increase MaxHealth by given percent
@@ -392,6 +392,7 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
     }
     public void OnTakeDamage(int currentHealth)
     {
+        if(_isDead) return;
         GameManager.Instance.onCurrentHealthChange?.Invoke(currentHealth, _damageable.MaxHealth);
 
         if (currentHealth <= 0)
@@ -399,6 +400,7 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
             AudioManager.Instance.PlayMusic("GameOver");
             _animator.CrossFade("Die", 0.1f);
             _inputReader.DisableInput();
+            _isDead = true;
         }
         else
         {
@@ -418,6 +420,7 @@ public class PlayerStateMachine : StateManager<PlayerStateMachine.EPlayerState>
     public void OnDeadAnimationEnd()
     {
         GameManager.Instance.onGameOver?.Invoke(false);
+        GameManager.Instance.EnableMouse();
     }
     #endregion
 

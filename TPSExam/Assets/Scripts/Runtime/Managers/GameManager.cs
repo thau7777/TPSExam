@@ -75,6 +75,7 @@ public class GameManager : Singleton<GameManager>
 
         // start hidden
         _instructionPanel.anchoredPosition = _hiddenPos;
+        DisableMouse();
     }
     private void PauseGame()
     {
@@ -84,6 +85,10 @@ public class GameManager : Singleton<GameManager>
             return; // Don't pause if settings menu is open
         }
         bool isPaused = !_pauseMenu.activeSelf;
+        if (isPaused)
+            EnableMouse();
+        else
+            DisableMouse();
         _pauseMenu.SetActive(isPaused);
         Time.timeScale = isPaused ? 0 : 1; // Pause the game
         onGamePaused?.Invoke();
@@ -229,5 +234,17 @@ public class GameManager : Singleton<GameManager>
 #else
         Application.Quit();
 #endif
+    }
+
+    public void EnableMouse()
+    {
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+    }
+
+    public void DisableMouse()
+    {
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
 }

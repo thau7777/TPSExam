@@ -42,7 +42,7 @@ public class Shooter : MonoBehaviour
     private bool _isJumping;
 
     [SerializeField]
-    private float _bulletDamage = 10; // Damage dealt by bullets
+    private float _bulletDamage = 20; // Damage dealt by bullets
     [SerializeField]
     private ParticleSystem _muzzleFlash;
     [SerializeField]

@@ -16,9 +16,10 @@ public class EnemyManager : Singleton<EnemyManager>
     [SerializeField] private List<EnemyPrefabEntry> enemyPrefabs = new List<EnemyPrefabEntry>();
     private Dictionary<string, ObjectPool<GameObject>> _pools = new Dictionary<string, ObjectPool<GameObject>>();
     [SerializeField] private Transform _enemyParent;
-    [SerializeField] private int _enemyDamage = 10;
-    [SerializeField] private int _enemyMaxHealth = 100;
-
+   
+    private int _baseDamage = 10;
+    private int _baseMaxHealth = 60;
+    private int _minutesPassed = 0;
     // 🔑 Track active enemies
     private HashSet<GameObject> _activeEnemies = new HashSet<GameObject>();
 
@@ -78,8 +79,8 @@ public class EnemyManager : Singleton<EnemyManager>
             ai.ResetFade();
             ai.ResetBaseOffset();
 
-            ai.GetComponentInChildren<EnemyAttack>().attackDamage = _enemyDamage;
-            ai.GetComponent<Damageable>().MaxHealth = _enemyMaxHealth;
+            ai.GetComponentInChildren<EnemyAttack>().attackDamage = _baseDamage;
+            ai.GetComponent<Damageable>().MaxHealth = _baseMaxHealth;
             ai.GetComponent<Damageable>().ResetHealth();
         }
     }
@@ -138,9 +139,11 @@ public class EnemyManager : Singleton<EnemyManager>
 
     public void IncreaseEnemyStatPerMinute(int percent)
     {
-        _enemyDamage += _enemyDamage * (percent / 100);
-        _enemyMaxHealth += _enemyMaxHealth * (percent / 100);
+        _minutesPassed++;
+        _baseDamage = _baseDamage + Mathf.CeilToInt(_baseDamage * (percent / 100f) * _minutesPassed);
+        _baseMaxHealth = _baseMaxHealth + Mathf.CeilToInt(_baseMaxHealth * (percent / 100f) * _minutesPassed);
     }
+
 
     // 🔥 Kill all active enemies
     public void KillAllEnemies()
@@ -167,58 +170,7 @@ public class EnemyManager : Singleton<EnemyManager>
 
     }
 
-    public void ResetManager()
-    {
-        // 1. Kill / despawn all active enemies
-        var enemies = new List<GameObject>(_activeEnemies);
-        foreach (var enemy in enemies)
-        {
-            if (enemy == null) continue;
-
-            var ai = enemy.GetComponent<EnemyAI>();
-            if (ai != null)
-            {
-                ai.ForceDespawn(); // 👈 create a helper in EnemyAI to just return to pool without Die()
-            }
-            else
-            {
-                enemy.SetActive(false);
-            }
-
-            _activeEnemies.Remove(enemy);
-        }
-
-        // 2. Clear all pools
-        foreach (var pool in _pools.Values)
-        {
-            pool.Clear(); // destroys everything inside pool
-        }
-
-        _pools.Clear();
-
-        // 3. Rebuild pools from enemyPrefabs
-        foreach (var entry in enemyPrefabs)
-        {
-            if (entry.prefab == null || string.IsNullOrEmpty(entry.id))
-                continue;
-
-            var pool = new ObjectPool<GameObject>(
-                () => CreateEnemyInstance(entry.prefab, entry.id),
-                OnGetFromPool,
-                OnReleaseToPool,
-                OnDestroyPoolObject,
-                false,
-                entry.defaultCapacity,
-                entry.maxCapacity
-            );
-
-            _pools[entry.id] = pool;
-        }
-
-        // 4. Reset stats if needed
-        _enemyDamage = 10;
-        _enemyMaxHealth = 100;
-    }
+    
     
 
 
