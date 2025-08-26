@@ -1,3 +1,5 @@
+Press Tab in game to show instructions.
+
 Sử dụng object pool để spawn và despawn những enemy, buff, particle system, Projectiles.
 
 Sử dụng input reader được tạo từ scriptable object để dễ dàng quản lý và object nào muốn sử dụng input chỉ cẩn kéo vào script ở object đó là được.
