@@ -44,7 +44,7 @@ Core implementations include:
 
 ## 📅 Development Timeline
 
-* Development period: [Add time - e.g. 1–2 weeks]
+* Development period: 11 days
 * Team size: Solo project
 
 This project was developed in a short time, prioritizing **core gameplay feel and system implementation** over content and visual quality.
