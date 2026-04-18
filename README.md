@@ -9,8 +9,8 @@
 <h1 align="center">A Third-Person Survival Shooter Prototype</h1>
 
 <p align="center">
-  <a href="YOUR_BUILD_LINK">▶️ Play Game</a> •
-  <a href="YOUR_TRAILER_LINK">🎥 Trailer</a>
+  <a href="https://github.com/thau7777/TPSExam/releases/download/Lastest/SwarmShooterDemo.zip"><img src="https://img.shields.io/badge/Download-PC-black" /></a> •
+  <a href="https://youtu.be/N13rMjGHIpc"><img src="https://img.shields.io/badge/Gameplay-Video-red" /></a>
 </p>
 
 <p align="center">
