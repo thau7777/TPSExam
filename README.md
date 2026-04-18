@@ -86,9 +86,21 @@ Core gameplay loop:
 
 <!-- Add your GIFs or gameplay images here -->
 
+<p align="center"><b>Normal Shooting Mode</b></p>
 <p align="center">
-  <img src="README_assets/gameplay.gif" width="80%" />
+  <img src="README_assets/shoot.gif" width="97%" />
 </p>
+<br/>
+<p align="center"><b>Grenade Shooting Mode</b></p>
+<p align="center">
+  <img src="README_assets/grenade.gif" width="97%" />
+</p>
+<br/>
+<p align="center"><b>Buffs</b></p>
+<p align="center">
+  <img src="README_assets/buff.gif" width="97%" />
+</p>
+<br/>
 
 ---
 
