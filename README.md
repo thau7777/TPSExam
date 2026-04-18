@@ -44,7 +44,7 @@ Core implementations include:
 
 ## 📅 Development Timeline
 
-* Development period: 11 days
+* Development period: August 8th, 2025 - August 19th, 2025 
 * Team size: Solo project
 
 This project was developed in a short time, prioritizing **core gameplay feel and system implementation** over content and visual quality.
